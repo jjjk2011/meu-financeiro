@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanças Pro - Oficial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 p-4 md:p-8 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        
+        <div class="bg-slate-800 text-white p-4 mb-8 rounded-2xl flex flex-wrap justify-between items-center gap-4 shadow-xl border-b-4 border-emerald-500">
+            <div>
+                <h4 class="font-bold text-sm text-emerald-400 uppercase tracking-widest">Segurança dos Dados</h4>
+                <p class="text-[10px] opacity-70">Salva automático. Use o backup para guardar no seu PC.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="exportarBackup()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                    <span>📥</span> Salvar Backup
+                </button>
+                <label class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition flex items-center gap-2">
+                    <span>📤</span> Carregar Arquivo
+                    <input type="file" class="hidden" onchange="importarBackup(event)">
+                </label>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-white">
+            <div class="bg-emerald-500 p-6 rounded-3xl shadow-lg">
+                <p class="text-[10px] uppercase font-bold opacity-80">Entradas</p>
+                <h2 id="displayIncome" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+            <div class="bg-rose-500 p-6 rounded-3xl shadow-lg">
+                <p class="text-[10px] uppercase font-bold opacity-80">Saídas</p>
+                <h2 id="displayExpense" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+            <div id="balanceCard" class="bg-white p-6 rounded-3xl shadow-lg border-2 border-slate-100 text-slate-800">
+                <p class="text-[10px] uppercase font-bold text-slate-400">Saldo Atual</p>
+                <h2 id="displayBalance" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <div class="space-y-6">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-blue-600">
+                        <span>📝</span> Novo Lançamento
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Fluxo</label>
+                                <select id="inType" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="income">Receita (+)</option>
+                                    <option value="expense" selected>Despesa (-)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Categoria</label>
+                                <select id="inCat" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm"></select>
+                            </div>
+                        </div>
+
+                        <input id="inDesc" type="text" placeholder="Descrição do gasto ou receita" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <input id="inVal" type="number" placeholder="Valor R$" class="p-3 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="inInst" type="number" placeholder="Parcelas (ex: 1)" class="p-3 bg-slate-50 border rounded-2xl outline-none">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Cartão ou Banco</label>
+                            <select id="inMeth" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm"></select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <select id="inMonth" class="p-3 bg-slate-50 border rounded-2xl text-sm font-bold"></select>
+                            <input id="inYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-sm font-bold">
+                        </div>
+
+                        <button onclick="saveEntry()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                            Gravar Registro
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-[10px] uppercase text-slate-400 tracking-widest">Categorias</h3>
+                            <button onclick="addCat()" class="bg-emerald-100 text-emerald-600 w-6 h-6 rounded-full font-extrabold hover:bg-emerald-200 transition" title="Nova Categoria">+</button>
+                        </div>
+                        <div id="listCats" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-[10px] uppercase text-slate-400 tracking-widest">Cartões</h3>
+                            <button onclick="addMeth()" class="bg-blue-100 text-blue-600 w-6 h-6 rounded-full font-extrabold hover:bg-blue-200 transition" title="Novo Cartão">+</button>
+                        </div>
+                        <div id="listMeths" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-fit">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-2">
+                    <h3 class="font-bold text-lg">Histórico do Mês</h3>
+                    <div class="flex gap-1">
+                        <select id="filterM" onchange="refresh()" class="p-2 border rounded-xl text-xs bg-slate-50 font-bold outline-none"></select>
+                        <input id="filterY" type="number" onchange="refresh()" class="p-2 border rounded-xl text-xs w-20 bg-slate-50 font-bold outline-none">
+                    </div>
+                </div>
+                <div class="max-h-[600px] overflow-y-auto pr-2">
+                    <table class="w-full text-left">
+                        <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

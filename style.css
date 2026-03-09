@@ -1,0 +1,54 @@
+:root{ --muted: #6b7280; }
+
+/* Estilos auxiliares mínimos — Tailwind cuida da maior parte da aparência */
+
+/* Badge animation (usado pelo JS para adicionar/remover classes) */
+.badge-pill {
+  display:inline-block;
+  opacity:0;
+  transform:translateY(-6px);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.2,.9,.2,1);
+}
+.badge-pill.badge-visible {
+  opacity:1;
+  transform:translateY(0);
+  background:#eff6ff; /* azul claro */
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Sticky table header dentro de .table-wrap */
+.table-wrap thead th {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 5;
+}
+
+/* Linha de resumo da tabela com contraste mais claro */
+.table-summary td {
+  background:#f0f9ff; /* azul muito claro */
+  font-weight:600;
+  padding:10px;
+  border-bottom:1px solid rgba(15,23,42,0.08);
+}
+
+/* Botão de exclusão — pode ser substituído por classes Tailwind no HTML */
+.btn-delete {
+  background:#fee2e2;
+  color:#b91c1c;
+  border:none;
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  transition: background .2s ease, opacity .2s ease;
+}
+.btn-delete:hover {
+  background:#fecaca;
+  opacity:0.95;
+}
+
+/* Wrapper da tabela com scroll horizontal e padding lateral */
+.table-wrap {
+  overflow-x:auto;
+  padding:0 8px;
+}
