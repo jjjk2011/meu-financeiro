@@ -1,125 +1,156 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Financeiro Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-900 p-2 md:p-8">
+const DB_KEY = 'financeiro_v4_data';
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-    <div class="max-w-6xl mx-auto">
-        <div class="bg-slate-800 text-white p-4 mb-6 rounded-2xl flex flex-wrap justify-between items-center gap-4 shadow-lg">
-            <div>
-                <h4 class="font-bold text-sm text-emerald-400 uppercase tracking-wider">Banco de Dados</h4>
-                <p class="text-[10px] opacity-70 font-medium">Use Importar para restaurar seus dados</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="exportarBanco()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold transition uppercase">📥 Exportar</button>
-                <label class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer transition uppercase text-center">
-                    📤 Importar
-                    <input type="file" class="hidden" onchange="importarBanco(event)">
-                </label>
-            </div>
-        </div>
+let db = JSON.parse(localStorage.getItem(DB_KEY)) || {
+    transactions: [],
+    methods: ['Dinheiro', 'MERCADO PAGO'],
+    categories: ['Alimentação', 'Contas']
+};
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-emerald-500 p-6 rounded-3xl shadow-lg text-white">
-                <p class="text-[10px] opacity-80 uppercase font-bold mb-1">Entradas</p>
-                <h2 id="totalIncomeDisplay" class="text-3xl font-bold">R$ 0,00</h2>
-            </div>
-            <div class="bg-rose-500 p-6 rounded-3xl shadow-lg text-white">
-                <p class="text-[10px] opacity-80 uppercase font-bold mb-1">Saídas</p>
-                <h2 id="totalExpenseDisplay" class="text-3xl font-bold">R$ 0,00</h2>
-            </div>
-            <div id="balanceCard" class="bg-white p-6 rounded-3xl shadow-lg border-2 border-slate-100 transition-colors">
-                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Saldo Líquido</p>
-                <h2 id="balanceDisplay" class="text-3xl font-bold">R$ 0,00</h2>
-            </div>
-        </div>
+function save() {
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="space-y-6">
-                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
-                    <h3 class="text-xl font-bold mb-6 text-slate-800">Novo Lançamento</h3>
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
-                                <select id="entryType" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
-                                    <option value="income">Receita (+)</option>
-                                    <option value="expense" selected>Despesa (-)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Categoria</label>
-                                <div class="flex gap-1">
-                                    <select id="entryCategory" class="flex-grow p-3 bg-slate-50 border rounded-2xl outline-none text-xs"></select>
-                                    <button onclick="addNewCategory()" class="bg-slate-200 px-3 rounded-2xl font-bold hover:bg-slate-300">+</button>
-                                </div>
-                            </div>
-                        </div>
-                        <input id="entryDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
-                        <div class="grid grid-cols-2 gap-4">
-                            <input id="entryValue" type="number" placeholder="Valor R$" class="p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
-                            <input id="entryInstallments" type="number" placeholder="Parcelas (1)" class="p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Cartão / Banco</label>
-                            <div class="flex gap-1">
-                                <select id="entryMethod" class="flex-grow p-3 bg-slate-50 border rounded-2xl outline-none text-xs"></select>
-                                <button onclick="addNewMethod()" class="bg-slate-200 px-3 rounded-2xl font-bold hover:bg-slate-300">+</button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <select id="entryMonth" class="p-3 bg-slate-50 border rounded-2xl text-xs"></select>
-                            <input id="entryYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-xs">
-                        </div>
-                        <button onclick="addEntry()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">Salvar no Banco</button>
-                    </div>
-                </div>
+function exportarBanco() {
+    const blob = new Blob([JSON.stringify(db)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup_financeiro.json';
+    a.click();
+}
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-white p-5 rounded-3xl border border-slate-200">
-                        <h3 class="font-bold text-[10px] uppercase text-slate-400 mb-3 tracking-widest">Categorias</h3>
-                        <div id="categoryListUI" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
-                    </div>
-                    <div class="bg-white p-5 rounded-3xl border border-slate-200">
-                        <h3 class="font-bold text-[10px] uppercase text-slate-400 mb-3 tracking-widest">Cartões / Bancos</h3>
-                        <div id="methodListUI" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
-                    </div>
-                </div>
-            </div>
+function importarBanco(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Lógica para aceitar o backup do usuário que usa 'db' e 'val'
+            if (data.db && Array.isArray(data.db)) {
+                db.transactions = data.db.map(t => ({
+                    id: t.id || Math.random(),
+                    type: t.type,
+                    desc: t.desc,
+                    category: t.cat || 'Geral',
+                    method: t.meth || 'Dinheiro',
+                    value: t.val || 0,
+                    label: t.label || '',
+                    mIdx: t.mIdx,
+                    year: t.year,
+                    pago: t.pago || false
+                }));
+                if(data.myMeths) db.methods = data.myMeths;
+                if(data.myCats) db.categories = data.myCats;
+            } else {
+                db = data;
+            }
+            
+            save();
+            alert("Backup carregado com sucesso!");
+            location.reload();
+        } catch (err) { alert("Erro no arquivo."); }
+    };
+    reader.readAsText(file);
+}
 
-            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 h-fit">
-                <div class="flex flex-wrap justify-between items-center mb-6 gap-2 border-b pb-4">
-                    <div>
-                        <h3 class="font-bold text-lg text-slate-800">Histórico Mensal</h3>
-                        <p class="text-[10px] text-slate-400 uppercase font-medium">Gestão de registros</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <select id="filterMonth" onchange="updateUI()" class="p-2 border rounded-xl text-[10px] bg-slate-50 outline-none"></select>
-                        <input id="filterYear" type="number" onchange="updateUI()" class="p-2 border rounded-xl text-[10px] w-16 bg-slate-50 outline-none">
-                        <button onclick="limparTodoOBanco()" class="bg-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all border border-rose-200">LIMPAR</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[9px] font-bold text-slate-400 uppercase">
-                                <th class="pb-3 text-center w-10">Pago</th>
-                                <th class="pb-3 pl-2">Detalhes</th>
-                                <th class="pb-3 text-right">Valor</th>
-                                <th class="pb-3 text-right w-8"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionTableUI" class="divide-y divide-slate-50"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+function addEntry() {
+    const type = document.getElementById('entryType').value;
+    const desc = document.getElementById('entryDesc').value;
+    const val = parseFloat(document.getElementById('entryValue').value);
+    const inst = parseInt(document.getElementById('entryInstallments').value) || 1;
+    const cat = document.getElementById('entryCategory').value;
+    const meth = document.getElementById('entryMethod').value;
+    const mon = document.getElementById('entryMonth').value;
+    const year = parseInt(document.getElementById('entryYear').value);
 
-    <script src="app.js"></script>
-</body>
-</html>
+    if(!desc || isNaN(val)) return alert("Preencha tudo.");
+
+    const startIdx = MONTHS.indexOf(mon);
+    for(let i=0; i<inst; i++) {
+        const currentIdx = startIdx + i;
+        db.transactions.push({
+            id: Date.now() + i,
+            type, desc, category: cat, method: meth,
+            value: val / inst,
+            label: inst > 1 ? `(${i+1}/${inst})` : '',
+            mIdx: currentIdx % 12,
+            year: year + Math.floor(currentIdx / 12),
+            pago: false
+        });
+    }
+    save(); updateUI();
+}
+
+function togglePago(id) {
+    const t = db.transactions.find(x => x.id === id);
+    if(t) t.pago = !t.pago;
+    save(); updateUI();
+}
+
+function deleteItem(id) {
+    if(confirm("Excluir?")) {
+        db.transactions = db.transactions.filter(x => x.id !== id);
+        save(); updateUI();
+    }
+}
+
+function limparTodoOBanco() {
+    if(confirm("Apagar TUDO?")) {
+        db.transactions = [];
+        save(); updateUI();
+    }
+}
+
+function updateUI() {
+    const m = MONTHS.indexOf(document.getElementById('filterMonth').value);
+    const y = parseInt(document.getElementById('filterYear').value);
+
+    const filtered = db.transactions.filter(t => t.mIdx === m && t.year === y);
+    const inc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.value, 0);
+    const exp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.value, 0);
+
+    document.getElementById('totalIncomeDisplay').innerText = inc.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('totalExpenseDisplay').innerText = exp.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('balanceDisplay').innerText = (inc - exp).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+
+    document.getElementById('transactionTableUI').innerHTML = filtered.map(t => `
+        <tr class="${t.pago ? 'opacity-40' : ''}">
+            <td class="py-3 text-center">
+                <button onclick="togglePago(${t.id})" class="w-5 h-5 rounded-full border ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-transparent'}">✓</button>
+            </td>
+            <td>
+                <div class="font-bold ${t.pago ? 'line-through' : ''}">${t.desc} <span class="text-[9px] font-normal opacity-50">${t.label}</span></div>
+                <div class="text-[8px] uppercase font-bold text-blue-500">${t.method} | ${t.category}</div>
+            </td>
+            <td class="text-right font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                ${t.value.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+            </td>
+            <td class="text-right"><button onclick="deleteItem(${t.id})" class="text-slate-300 px-2">✕</button></td>
+        </tr>`).join('');
+
+    renderSettings();
+}
+
+function renderSettings() {
+    document.getElementById('entryCategory').innerHTML = db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('entryMethod').innerHTML = db.methods.map(m => `<option value="${m}">${m}</option>`).join('');
+    document.getElementById('categoryListUI').innerHTML = db.categories.map(c => `<div class="text-[9px] bg-slate-100 p-1 px-2 rounded uppercase font-bold">${c}</div>`).join('');
+    document.getElementById('methodListUI').innerHTML = db.methods.map(m => `<div class="text-[9px] bg-slate-100 p-1 px-2 rounded uppercase font-bold">${m}</div>`).join('');
+}
+
+function addNewCategory() { const n = prompt("Nova:"); if(n) { db.categories.push(n); save(); updateUI(); } }
+function addNewMethod() { const n = prompt("Novo:"); if(n) { db.methods.push(n); save(); updateUI(); } }
+
+window.onload = () => {
+    const now = new Date();
+    ['entryMonth', 'filterMonth'].forEach(id => {
+        const el = document.getElementById(id);
+        MONTHS.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
+        el.value = MONTHS[now.getMonth()];
+    });
+    document.getElementById('entryYear').value = document.getElementById('filterYear').value = now.getFullYear();
+    updateUI();
+};
