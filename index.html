@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Financeiro Pro</title>
+    <title>Financeiro Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 p-4">
@@ -11,12 +11,12 @@
     <div class="max-w-6xl mx-auto">
         <div class="bg-slate-800 text-white p-6 mb-6 rounded-3xl flex flex-wrap justify-between items-center gap-4 shadow-xl">
             <div>
-                <h1 class="font-black text-xl text-emerald-400">FINANCEIRO PRO</h1>
+                <h1 class="font-black text-xl text-emerald-400 uppercase">Financeiro Pro</h1>
                 <p class="text-[10px] opacity-60 uppercase tracking-widest">Gestão de Backup e Dados</p>
             </div>
             <div class="flex gap-3">
                 <button onclick="exportarBackup()" class="bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 rounded-2xl text-xs font-bold transition uppercase">Exportar</button>
-                <label class="bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-2xl text-xs font-bold cursor-pointer transition uppercase">
+                <label class="bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-2xl text-xs font-bold cursor-pointer transition uppercase text-center">
                     Importar Backup
                     <input type="file" class="hidden" onchange="importarBackup(event)">
                 </label>
@@ -25,7 +25,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="lg:col-span-1 space-y-4">
+            <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <p class="text-[10px] font-bold text-slate-400 uppercase mb-4">Resumo do Mês</p>
                     <div class="space-y-3">
@@ -37,9 +37,9 @@
                             <span class="text-xs text-slate-500 font-medium">Saídas:</span>
                             <span id="totalExpense" class="font-bold text-rose-500">R$ 0,00</span>
                         </div>
-                        <div class="pt-3 border-t flex justify-between items-center text-lg">
+                        <div class="pt-3 border-t flex justify-between items-center">
                             <span class="font-bold text-slate-700 text-sm">Líquido:</span>
-                            <span id="totalBalance" class="font-black text-slate-900">R$ 0,00</span>
+                            <span id="totalBalance" class="font-black text-slate-900 text-xl">R$ 0,00</span>
                         </div>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                             <option value="income">Receita (+)</option>
                             <option value="expense" selected>Despesa (-)</option>
                         </select>
-                        <input id="inDesc" type="text" placeholder="Ex: Salário, Aluguel..." class="w-full p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
+                        <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
                         <div class="grid grid-cols-2 gap-2">
                             <input id="inVal" type="number" placeholder="Valor" class="p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
                             <input id="inParc" type="number" placeholder="Parc." class="p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
@@ -62,29 +62,48 @@
                             <select id="inMonth" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none"></select>
                             <input id="inYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none">
                         </div>
-                        <button onclick="adicionar()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition shadow-lg">ADICIONAR</button>
+                        <button onclick="adicionar()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition shadow-lg uppercase text-xs tracking-widest">Adicionar</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 space-y-4">
+                    <div>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-2">Categorias</p>
+                        <div class="flex gap-1 mb-2">
+                            <input id="newCatName" type="text" placeholder="Nova..." class="flex-grow p-2 bg-slate-50 border rounded-xl text-xs outline-none">
+                            <button onclick="addList('categorias', 'newCatName')" class="bg-emerald-500 text-white px-3 rounded-xl font-bold">+</button>
+                        </div>
+                        <div id="catListUI" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto"></div>
+                    </div>
+                    <div class="pt-4 border-t">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-2">Bancos / Cartões</p>
+                        <div class="flex gap-1 mb-2">
+                            <input id="newMethName" type="text" placeholder="Novo..." class="flex-grow p-2 bg-slate-50 border rounded-xl text-xs outline-none">
+                            <button onclick="addList('metodos', 'newMethName')" class="bg-blue-500 text-white px-3 rounded-xl font-bold">+</button>
+                        </div>
+                        <div id="methListUI" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
-                    <h3 class="font-bold text-lg">Histórico Mensal</h3>
-                    <div class="flex gap-2">
+            <div class="lg:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-3 border-b pb-4">
+                    <h3 class="font-bold text-lg text-slate-800 tracking-tight">Histórico Mensal</h3>
+                    <div class="flex items-center gap-2">
                         <select id="fMonth" onchange="render()" class="p-2 border rounded-xl text-xs bg-slate-50 outline-none"></select>
                         <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20 bg-slate-50 outline-none">
-                        <button onclick="limparTudo()" class="text-rose-500 font-bold text-[10px] hover:bg-rose-50 px-3 rounded-xl transition">LIMPAR</button>
+                        <button onclick="limparTudo()" class="text-rose-500 font-bold text-[10px] hover:bg-rose-50 px-3 py-2 rounded-xl transition uppercase">Limpar</button>
                     </div>
                 </div>
                 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead>
-                            <tr class="text-[10px] text-slate-400 uppercase font-bold border-b">
-                                <th class="pb-3 text-center">Status</th>
+                            <tr class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">
+                                <th class="pb-3 text-center w-12">Status</th>
                                 <th class="pb-3">Descrição</th>
                                 <th class="pb-3 text-right">Valor</th>
-                                <th class="pb-3 text-right"></th>
+                                <th class="pb-3 text-right w-10"></th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-50"></tbody>
