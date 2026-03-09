@@ -1,14 +1,14 @@
-// --- CONFIGURAÇÃO DE CHAVES PADRONIZADAS ---
-const DB_NAME = 'financas_main_db_v1';
-const DB_METHODS = 'financas_methods_db_v1';
-const DB_CATS = 'financas_cats_db_v1';
+// CHAVES OFICIAIS DO BANCO
+const DB_NAME = 'financas_main_db_v2';
+const DB_METHODS = 'financas_methods_db_v2';
+const DB_CATS = 'financas_cats_db_v2';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-// --- CARREGAMENTO INICIAL COM TRATAMENTO DE ERROS ---
+// Carregar dados iniciais
 let transactions = JSON.parse(localStorage.getItem(DB_NAME)) || [];
-let methods = JSON.parse(localStorage.getItem(DB_METHODS)) || ['Dinheiro', 'MERCADO PAGO', 'NOVUCARD'];
-let categories = JSON.parse(localStorage.getItem(DB_CATS)) || ['Alimentação', 'Contas', 'Lazer'];
+let methods = JSON.parse(localStorage.getItem(DB_METHODS)) || ['Dinheiro'];
+let categories = JSON.parse(localStorage.getItem(DB_CATS)) || ['Geral'];
 
 function saveAll() {
     localStorage.setItem(DB_NAME, JSON.stringify(transactions));
@@ -16,7 +16,7 @@ function saveAll() {
     localStorage.setItem(DB_CATS, JSON.stringify(categories));
 }
 
-// --- FUNÇÃO DE IMPORTAÇÃO CORRIGIDA PARA O SEU BACKUP ---
+// IMPORTAÇÃO ESPECIAL PARA O SEU BACKUP (Lê 'val', 'meth', 'cat')
 function importarBanco(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -25,9 +25,8 @@ function importarBanco(event) {
         try {
             const data = JSON.parse(e.target.result);
             
-            // Verifica se o backup veio do formato antigo (que você me enviou)
+            // Detecta se é o seu backup específico (com campo 'db')
             if (data.db && Array.isArray(data.db)) {
-                // Traduz o formato "curto" (val, meth) para o formato "extenso" (value, method)
                 transactions = data.db.map(t => ({
                     id: t.id || Date.now() + Math.random(),
                     type: t.type,
@@ -35,7 +34,7 @@ function importarBanco(event) {
                     category: t.cat || 'Geral',
                     method: t.meth || 'Dinheiro',
                     value: t.val || 0,
-                    installment: t.label || '1/1',
+                    installment: t.label || '(1/1)',
                     monthIndex: t.mIdx,
                     year: t.year,
                     pago: t.pago || false
@@ -43,56 +42,31 @@ function importarBanco(event) {
                 methods = data.myMeths || methods;
                 categories = data.myCats || categories;
             } else {
-                // Formato novo
+                // Formato padrão
                 transactions = data.transactions || [];
                 methods = data.methods || [];
                 categories = data.categories || [];
             }
             
             saveAll();
-            alert("Backup carregado com sucesso!");
+            alert("Backup do seu arquivo carregado com sucesso!");
             location.reload();
-        } catch (err) { 
-            alert("Erro ao ler o arquivo. Verifique se é o arquivo .json correto."); 
-        }
+        } catch (err) { alert("Erro ao ler o arquivo de backup."); }
     };
     reader.readAsText(file);
 }
 
 function exportarBanco() {
-    const backup = { transactions, methods, categories, date: new Date().toISOString() };
+    const backup = { transactions, methods, categories };
     const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `backup_financeiro_atualizado.json`;
+    link.download = `meu_financeiro_atualizado.json`;
     link.click();
 }
 
-// --- GESTÃO DE INTERFACE ---
-function renderSettings() {
-    const catSelect = document.getElementById('entryCategory');
-    const methSelect = document.getElementById('entryMethod');
-    
-    if(catSelect) catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    if(methSelect) methSelect.innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
-    
-    const catList = document.getElementById('categoryListUI');
-    const methList = document.getElementById('methodListUI');
-
-    if(catList) catList.innerHTML = categories.map((c, i) => `
-        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border mb-2 text-[10px]">
-            <span>${c}</span>
-            <button onclick="deleteCategory(${i})" class="text-red-500 font-bold">X</button>
-        </div>`).join('');
-        
-    if(methList) methList.innerHTML = methods.map((m, i) => `
-        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border mb-2 text-[10px]">
-            <span>${m}</span>
-            <button onclick="deleteMethod(${i})" class="text-red-500 font-bold">X</button>
-        </div>`).join('');
-}
-
+// LANÇAMENTOS
 function addEntry() {
     const type = document.getElementById('entryType').value;
     const desc = document.getElementById('entryDesc').value.trim();
@@ -119,8 +93,7 @@ function addEntry() {
             pago: false
         });
     }
-    saveAll();
-    updateUI();
+    saveAll(); updateUI();
     document.getElementById('entryDesc').value = '';
     document.getElementById('entryValue').value = '';
 }
@@ -131,11 +104,25 @@ function togglePago(id) {
 }
 
 function deleteTransaction(id) {
-    if(confirm("Excluir?")) {
-        transactions = transactions.filter(t => t.id !== id);
-        saveAll();
-        updateUI();
-    }
+    if(confirm("Excluir?")) { transactions = transactions.filter(t => t.id !== id); saveAll(); updateUI(); }
+}
+
+// RENDERIZAÇÃO
+function renderSettings() {
+    document.getElementById('entryCategory').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('entryMethod').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    document.getElementById('categoryListUI').innerHTML = categories.map((c, i) => `
+        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border text-[10px] mb-1">
+            <span>${c}</span>
+            <button onclick="deleteCategory(${i})" class="text-red-500">X</button>
+        </div>`).join('');
+        
+    document.getElementById('methodListUI').innerHTML = methods.map((m, i) => `
+        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border text-[10px] mb-1">
+            <span>${m}</span>
+            <button onclick="deleteMethod(${i})" class="text-red-500">X</button>
+        </div>`).join('');
 }
 
 function updateUI() {
@@ -144,7 +131,6 @@ function updateUI() {
     const mIdx = MONTHS.indexOf(filterM);
 
     const filtered = transactions.filter(t => t.monthIndex === mIdx && t.year === filterY);
-    
     const inc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.value, 0);
     const exp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.value, 0);
 
@@ -153,50 +139,39 @@ function updateUI() {
     document.getElementById('balanceDisplay').innerText = (inc - exp).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 
     document.getElementById('transactionTableUI').innerHTML = filtered.sort((a,b) => a.pago - b.pago).map(t => `
-        <tr class="text-xs ${t.pago ? 'opacity-40' : ''}">
-            <td class="py-3 text-center">
-                <button onclick="togglePago(${t.id})" class="w-5 h-5 rounded-full border flex items-center justify-center ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">✓</button>
+        <tr class="text-xs transition-all ${t.pago ? 'opacity-40 bg-slate-50/50' : ''}">
+            <td class="py-4 text-center">
+                <button onclick="togglePago(${t.id})" 
+                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-transparent'}">
+                    ✓
+                </button>
             </td>
-            <td class="py-2">
-                <div class="font-bold ${t.pago ? 'line-through' : ''}">${t.desc} <span class="text-[9px] font-normal">${t.installment || ''}</span></div>
-                <div class="text-[8px] uppercase text-blue-500 font-bold">${t.method} | ${t.category}</div>
+            <td class="py-4 pl-2">
+                <div class="font-bold ${t.pago ? 'line-through' : ''}">${t.desc} <span class="text-[8px] font-normal text-slate-400">${t.installment}</span></div>
+                <div class="text-[8px] uppercase font-bold text-blue-500">${t.method} | ${t.category}</div>
             </td>
             <td class="text-right font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
                 ${t.value.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
             </td>
-            <td class="text-right px-2">
-                <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-red-500">✕</button>
+            <td class="text-right pr-2">
+                <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-red-500 text-lg font-bold">✕</button>
             </td>
         </tr>`).join('');
 }
 
-function addNewCategory() {
-    const n = prompt("Nova categoria:");
-    if(n) { categories.push(n); saveAll(); renderSettings(); }
-}
+function addNewCategory() { const n = prompt("Nova categoria:"); if(n) { categories.push(n); saveAll(); renderSettings(); } }
+function addNewMethod() { const n = prompt("Novo Banco:"); if(n) { methods.push(n); saveAll(); renderSettings(); } }
+function deleteCategory(i) { if(confirm("Apagar?")) { categories.splice(i,1); saveAll(); renderSettings(); } }
+function deleteMethod(i) { if(confirm("Apagar?")) { methods.splice(i,1); saveAll(); renderSettings(); } }
 
-function addNewMethod() {
-    const n = prompt("Novo Cartão/Banco:");
-    if(n) { methods.push(n); saveAll(); renderSettings(); }
-}
-
-function deleteCategory(i) { if(confirm("Apagar?")) { categories.splice(i, 1); saveAll(); renderSettings(); } }
-function deleteMethod(i) { if(confirm("Apagar?")) { methods.splice(i, 1); saveAll(); renderSettings(); } }
-
-// --- INICIALIZAÇÃO ---
 window.onload = function() {
     const now = new Date();
-    const selMon = document.getElementById('entryMonth');
-    const filMon = document.getElementById('filterMonth');
-    
-    MONTHS.forEach(m => {
-        selMon.innerHTML += `<option value="${m}">${m}</option>`;
-        filMon.innerHTML += `<option value="${m}">${m}</option>`;
+    ['entryMonth', 'filterMonth'].forEach(id => {
+        const el = document.getElementById(id);
+        MONTHS.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
+        el.value = MONTHS[now.getMonth()];
     });
-
-    selMon.value = filMon.value = MONTHS[now.getMonth()];
     document.getElementById('entryYear').value = document.getElementById('filterYear').value = now.getFullYear();
-
     renderSettings();
     updateUI();
 };
