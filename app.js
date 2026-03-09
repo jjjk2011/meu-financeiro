@@ -1,156 +1,168 @@
-const DB_KEY = 'financeiro_v4_data';
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+// CONFIGURAÇÕES GLOBAIS
+const STORAGE_KEY = 'MEU_FINANCEIRO_V5';
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-let db = JSON.parse(localStorage.getItem(DB_KEY)) || {
-    transactions: [],
-    methods: ['Dinheiro', 'MERCADO PAGO'],
-    categories: ['Alimentação', 'Contas']
+// BANCO DE DADOS INICIAL
+let dados = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+    transacoes: [],
+    categorias: ['Alimentação', 'Contas', 'Lazer', 'Saúde', 'Transporte'],
+    metodos: ['Dinheiro', 'MERCADO PAGO', 'NOVUCARD']
 };
 
-function save() {
-    localStorage.setItem(DB_KEY, JSON.stringify(db));
+function salvar() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+    render();
 }
 
-function exportarBanco() {
-    const blob = new Blob([JSON.stringify(db)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'backup_financeiro.json';
-    a.click();
-}
-
-function importarBanco(event) {
+// IMPORTAÇÃO CRÍTICA (Lê exatamente o seu backup)
+function importarBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const data = JSON.parse(e.target.result);
+            const json = JSON.parse(e.target.result);
             
-            // Lógica para aceitar o backup do usuário que usa 'db' e 'val'
-            if (data.db && Array.isArray(data.db)) {
-                db.transactions = data.db.map(t => ({
+            // Se o arquivo tiver o formato 'db' que você enviou
+            if (json.db && Array.isArray(json.db)) {
+                dados.transacoes = json.db.map(t => ({
                     id: t.id || Math.random(),
-                    type: t.type,
+                    tipo: t.type,
                     desc: t.desc,
-                    category: t.cat || 'Geral',
-                    method: t.meth || 'Dinheiro',
-                    value: t.val || 0,
-                    label: t.label || '',
-                    mIdx: t.mIdx,
-                    year: t.year,
+                    valor: t.val || 0,
+                    categoria: t.cat || 'Geral',
+                    metodo: t.meth || 'Dinheiro',
+                    parc: t.label || '',
+                    mesIdx: t.mIdx,
+                    ano: t.year,
                     pago: t.pago || false
                 }));
-                if(data.myMeths) db.methods = data.myMeths;
-                if(data.myCats) db.categories = data.myCats;
+                if (json.myCats) dados.categorias = json.myCats;
+                if (json.myMeths) dados.metodos = json.myMeths;
             } else {
-                db = data;
+                dados = json;
             }
-            
-            save();
+
+            salvar();
             alert("Backup carregado com sucesso!");
             location.reload();
-        } catch (err) { alert("Erro no arquivo."); }
+        } catch (err) {
+            alert("Erro ao ler backup. Verifique o arquivo.");
+        }
     };
     reader.readAsText(file);
 }
 
-function addEntry() {
-    const type = document.getElementById('entryType').value;
-    const desc = document.getElementById('entryDesc').value;
-    const val = parseFloat(document.getElementById('entryValue').value);
-    const inst = parseInt(document.getElementById('entryInstallments').value) || 1;
-    const cat = document.getElementById('entryCategory').value;
-    const meth = document.getElementById('entryMethod').value;
-    const mon = document.getElementById('entryMonth').value;
-    const year = parseInt(document.getElementById('entryYear').value);
+function exportarBackup() {
+    const blob = new Blob([JSON.stringify(dados)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'backup_financeiro_v5.json';
+    link.click();
+}
 
-    if(!desc || isNaN(val)) return alert("Preencha tudo.");
+// LÓGICA DE INTERFACE
+function adicionar() {
+    const tipo = document.getElementById('inType').value;
+    const desc = document.getElementById('inDesc').value;
+    const val = parseFloat(document.getElementById('inVal').value);
+    const parc = parseInt(document.getElementById('inParc').value) || 1;
+    const cat = document.getElementById('inCat').value;
+    const meth = document.getElementById('inMeth').value;
+    const mes = document.getElementById('inMonth').value;
+    const ano = parseInt(document.getElementById('inYear').value);
 
-    const startIdx = MONTHS.indexOf(mon);
-    for(let i=0; i<inst; i++) {
-        const currentIdx = startIdx + i;
-        db.transactions.push({
+    if (!desc || isNaN(val)) return alert("Preencha descrição e valor!");
+
+    const startIdx = MESES.indexOf(mes);
+    for (let i = 0; i < parc; i++) {
+        const curIdx = startIdx + i;
+        dados.transacoes.push({
             id: Date.now() + i,
-            type, desc, category: cat, method: meth,
-            value: val / inst,
-            label: inst > 1 ? `(${i+1}/${inst})` : '',
-            mIdx: currentIdx % 12,
-            year: year + Math.floor(currentIdx / 12),
+            tipo, desc, valor: val / parc,
+            categoria: cat, metodo: meth,
+            parc: parc > 1 ? `(${i + 1}/${parc})` : '',
+            mesIdx: curIdx % 12,
+            ano: ano + Math.floor(curIdx / 12),
             pago: false
         });
     }
-    save(); updateUI();
+    salvar();
+    document.getElementById('inDesc').value = '';
+    document.getElementById('inVal').value = '';
 }
 
 function togglePago(id) {
-    const t = db.transactions.find(x => x.id === id);
-    if(t) t.pago = !t.pago;
-    save(); updateUI();
+    const t = dados.transacoes.find(x => x.id === id);
+    if (t) t.pago = !t.pago;
+    salvar();
 }
 
-function deleteItem(id) {
-    if(confirm("Excluir?")) {
-        db.transactions = db.transactions.filter(x => x.id !== id);
-        save(); updateUI();
+function excluir(id) {
+    if (confirm("Deseja apagar este item?")) {
+        dados.transacoes = dados.transacoes.filter(x => x.id !== id);
+        salvar();
     }
 }
 
-function limparTodoOBanco() {
-    if(confirm("Apagar TUDO?")) {
-        db.transactions = [];
-        save(); updateUI();
+function limparTudo() {
+    if (confirm("Apagar TODO o histórico?")) {
+        dados.transacoes = [];
+        salvar();
     }
 }
 
-function updateUI() {
-    const m = MONTHS.indexOf(document.getElementById('filterMonth').value);
-    const y = parseInt(document.getElementById('filterYear').value);
+function render() {
+    const m = MESES.indexOf(document.getElementById('fMonth').value);
+    const y = parseInt(document.getElementById('fYear').value);
 
-    const filtered = db.transactions.filter(t => t.mIdx === m && t.year === y);
-    const inc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.value, 0);
-    const exp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.value, 0);
+    const filtrados = dados.transacoes.filter(t => t.mesIdx === m && t.ano === y);
+    const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
+    const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
 
-    document.getElementById('totalIncomeDisplay').innerText = inc.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('totalExpenseDisplay').innerText = exp.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('balanceDisplay').innerText = (inc - exp).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('totalIncome').innerText = inc.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('totalExpense').innerText = exp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('totalBalance').innerText = (inc - exp).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    document.getElementById('transactionTableUI').innerHTML = filtered.map(t => `
-        <tr class="${t.pago ? 'opacity-40' : ''}">
-            <td class="py-3 text-center">
-                <button onclick="togglePago(${t.id})" class="w-5 h-5 rounded-full border ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-transparent'}">✓</button>
+    document.getElementById('tableBody').innerHTML = filtrados.map(t => `
+        <tr class="transition-all ${t.pago ? 'opacity-30' : ''}">
+            <td class="py-4 text-center">
+                <button onclick="togglePago(${t.id})" class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-transparent'}">✓</button>
             </td>
-            <td>
-                <div class="font-bold ${t.pago ? 'line-through' : ''}">${t.desc} <span class="text-[9px] font-normal opacity-50">${t.label}</span></div>
-                <div class="text-[8px] uppercase font-bold text-blue-500">${t.method} | ${t.category}</div>
+            <td class="py-4">
+                <div class="font-bold text-sm ${t.pago ? 'line-through text-slate-400' : 'text-slate-800'}">${t.desc} <span class="text-[10px] font-normal opacity-50">${t.parc}</span></div>
+                <div class="text-[9px] uppercase font-bold text-blue-500 tracking-tighter">${t.metodo} • ${t.categoria}</div>
             </td>
-            <td class="text-right font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
-                ${t.value.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+            <td class="text-right font-bold text-sm ${t.tipo === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                ${t.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </td>
-            <td class="text-right"><button onclick="deleteItem(${t.id})" class="text-slate-300 px-2">✕</button></td>
-        </tr>`).join('');
+            <td class="text-right">
+                <button onclick="excluir(${t.id})" class="text-slate-300 hover:text-rose-500 px-2 font-bold text-lg">✕</button>
+            </td>
+        </tr>
+    `).join('');
 
-    renderSettings();
-}
-
-function renderSettings() {
-    document.getElementById('entryCategory').innerHTML = db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('entryMethod').innerHTML = db.methods.map(m => `<option value="${m}">${m}</option>`).join('');
-    document.getElementById('categoryListUI').innerHTML = db.categories.map(c => `<div class="text-[9px] bg-slate-100 p-1 px-2 rounded uppercase font-bold">${c}</div>`).join('');
-    document.getElementById('methodListUI').innerHTML = db.methods.map(m => `<div class="text-[9px] bg-slate-100 p-1 px-2 rounded uppercase font-bold">${m}</div>`).join('');
-}
-
-function addNewCategory() { const n = prompt("Nova:"); if(n) { db.categories.push(n); save(); updateUI(); } }
-function addNewMethod() { const n = prompt("Novo:"); if(n) { db.methods.push(n); save(); updateUI(); } }
-
-window.onload = () => {
-    const now = new Date();
-    ['entryMonth', 'filterMonth'].forEach(id => {
+    // Update Dropdowns
+    const updateSelect = (id, list) => {
         const el = document.getElementById(id);
-        MONTHS.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
-        el.value = MONTHS[now.getMonth()];
+        const val = el.value;
+        el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+        if (list.includes(val)) el.value = val;
+    };
+    updateSelect('inCat', dados.categorias);
+    updateSelect('inMeth', dados.metodos);
+}
+
+// INICIALIZAÇÃO
+window.onload = () => {
+    const agora = new Date();
+    ['inMonth', 'fMonth'].forEach(id => {
+        const el = document.getElementById(id);
+        MESES.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
+        el.value = MESES[agora.getMonth()];
     });
-    document.getElementById('entryYear').value = document.getElementById('filterYear').value = now.getFullYear();
-    updateUI();
+    document.getElementById('inYear').value = document.getElementById('fYear').value = agora.getFullYear();
+    render();
 };
