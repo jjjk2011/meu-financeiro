@@ -1,182 +1,219 @@
-// --- CHAVES DO BANCO DE DADOS ---
-const STORAGE_DATA = 'MEU_FIN_BANCO_V1';
-const STORAGE_CATS = 'MEU_FIN_CATS_V1';
-const STORAGE_METH = 'MEU_FIN_METH_V1';
+/**
+ * SISTEMA FINANCEIRO PADRONIZADO v2.0
+ * Chaves de armazenamento fixas para evitar perda de dados
+ */
+const DB_NAME = 'financas_main_db_v1';
+const DB_METHODS = 'financas_methods_db_v1';
+const DB_CATS = 'financas_cats_db_v1';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // --- CARREGAMENTO INICIAL ---
-let db = JSON.parse(localStorage.getItem(STORAGE_DATA)) || [];
-let myCats = JSON.parse(localStorage.getItem(STORAGE_CATS)) || ['Alimentação', 'Contas', 'Lazer'];
-let myMeths = JSON.parse(localStorage.getItem(STORAGE_METH)) || ['Dinheiro', 'Cartão'];
+let transactions = JSON.parse(localStorage.getItem(DB_NAME)) || [];
+let methods = JSON.parse(localStorage.getItem(DB_METHODS)) || ['Dinheiro', 'Nubank', 'Itaú'];
+let categories = JSON.parse(localStorage.getItem(DB_CATS)) || ['Alimentação', 'Moradia', 'Lazer', 'Saúde', 'Salário'];
 
-function autoSave() {
-    localStorage.setItem(STORAGE_DATA, JSON.stringify(db));
-    localStorage.setItem(STORAGE_CATS, JSON.stringify(myCats));
-    localStorage.setItem(STORAGE_METH, JSON.stringify(myMeths));
+function saveAll() {
+    localStorage.setItem(DB_NAME, JSON.stringify(transactions));
+    localStorage.setItem(DB_METHODS, JSON.stringify(methods));
+    localStorage.setItem(DB_CATS, JSON.stringify(categories));
 }
 
-// --- SISTEMA DE BACKUP ---
-function exportarBackup() {
-    const backup = { db, myCats, myMeths, version: '1.0' };
+// --- BACKUP E SINCRONIZAÇÃO ---
+function exportarBanco() {
+    const backup = { transactions, methods, categories, date: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_financeiro_${new Date().toLocaleDateString()}.json`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `meu_financeiro_backup.json`;
+    link.click();
 }
 
-function importarBackup(event) {
+function importarBanco(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const json = JSON.parse(e.target.result);
-            if(confirm("Deseja restaurar este backup? Isso apagará os dados atuais.")) {
-                db = json.db || [];
-                myCats = json.myCats || [];
-                myMeths = json.myMeths || [];
-                autoSave();
+            const data = JSON.parse(e.target.result);
+            if(confirm("ATENÇÃO: Isso substituirá todos os dados atuais. Deseja continuar?")) {
+                transactions = data.transactions || [];
+                methods = data.methods || [];
+                categories = data.categories || [];
+                saveAll();
                 location.reload();
             }
-        } catch(err) { alert("Arquivo inválido."); }
+        } catch (err) { alert("Arquivo de backup inválido."); }
     };
     reader.readAsText(event.target.files[0]);
 }
 
-// --- GESTÃO DE CATEGORIAS ---
-function addCat() { 
-    let n = prompt("Nome da nova Categoria:"); 
-    if(n && !myCats.includes(n)) { 
-        myCats.push(n); 
-        autoSave(); 
-        renderSettings(); 
-    } 
+// --- GESTÃO DE MÉTODOS E CATEGORIAS ---
+function addNewCategory() {
+    const n = prompt("Nome da nova categoria:");
+    if(n && !categories.includes(n)) { categories.push(n); saveAll(); renderSettings(); }
 }
-function deleteCat(index) {
-    if(confirm(`Apagar categoria "${myCats[index]}"?`)) {
-        myCats.splice(index, 1);
-        autoSave();
-        renderSettings();
+function editCategory(i) {
+    const old = categories[i];
+    const n = prompt("Editar categoria:", old);
+    if(n && n !== old) {
+        categories[i] = n;
+        transactions.forEach(t => { if(t.category === old) t.category = n; });
+        saveAll(); renderSettings(); updateUI();
     }
 }
-
-// --- GESTÃO DE MÉTODOS ---
-function addMeth() { 
-    let n = prompt("Novo Cartão ou Banco:"); 
-    if(n && !myMeths.includes(n)) { 
-        myMeths.push(n); 
-        autoSave(); 
-        renderSettings(); 
-    } 
+function deleteCategory(i) {
+    if(confirm(`Excluir categoria "${categories[i]}"?`)) { categories.splice(i, 1); saveAll(); renderSettings(); }
 }
-function deleteMeth(index) {
-    if(confirm(`Apagar cartão/banco "${myMeths[index]}"?`)) {
-        myMeths.splice(index, 1);
-        autoSave();
-        renderSettings();
+
+function addNewMethod() {
+    const n = prompt("Nome do novo Cartão ou Banco:");
+    if(n && !methods.includes(n)) { methods.push(n); saveAll(); renderSettings(); }
+}
+function editMethod(i) {
+    const old = methods[i];
+    const n = prompt("Editar Cartão/Banco:", old);
+    if(n && n !== old) {
+        methods[i] = n;
+        transactions.forEach(t => { if(t.method === old) t.method = n; });
+        saveAll(); renderSettings(); updateUI();
     }
 }
+function deleteMethod(i) {
+    if(confirm(`Excluir "${methods[i]}"?`)) { methods.splice(i, 1); saveAll(); renderSettings(); }
+}
 
-// --- LANÇAMENTOS ---
-function saveEntry() {
-    const type = document.getElementById('inType').value;
-    const desc = document.getElementById('inDesc').value.trim();
-    const val = Math.abs(parseFloat(document.getElementById('inVal').value));
-    const inst = parseInt(document.getElementById('inInst').value) || 1;
-    const cat = document.getElementById('inCat').value;
-    const meth = document.getElementById('inMeth').value;
-    const mName = document.getElementById('inMonth').value;
-    const year = parseInt(document.getElementById('inYear').value);
+// --- LÓGICA DE LANÇAMENTOS ---
+function addEntry() {
+    const type = document.getElementById('entryType').value;
+    const desc = document.getElementById('entryDesc').value.trim();
+    const value = Math.abs(parseFloat(document.getElementById('entryValue').value));
+    const installments = parseInt(document.getElementById('entryInstallments').value) || 1;
+    const cat = document.getElementById('entryCategory').value;
+    const met = document.getElementById('entryMethod').value;
+    const mon = document.getElementById('entryMonth').value;
+    const yea = parseInt(document.getElementById('entryYear').value);
 
-    if(!desc || isNaN(val)) return alert("Preencha descrição e valor.");
+    if(!desc || isNaN(value)) return alert("Por favor, preencha descrição e valor.");
 
-    const startIdx = MONTHS.indexOf(mName);
+    const startIdx = MONTHS.indexOf(mon);
 
-    for(let i=0; i<inst; i++) {
-        const curIdx = startIdx + i;
-        db.push({
-            id: Date.now() + i,
-            type, desc, cat, meth,
-            val: val / inst,
-            label: inst > 1 ? `(${i+1}/${inst})` : '',
-            mIdx: curIdx % 12,
-            year: year + Math.floor(curIdx / 12)
+    for(let i=0; i < installments; i++) {
+        const absIdx = startIdx + i;
+        transactions.push({
+            id: Date.now() + i + Math.random(),
+            type, desc, category: cat, method: met,
+            value: value / installments,
+            installment: `${i+1}/${installments}`,
+            monthIndex: absIdx % 12,
+            year: yea + Math.floor(absIdx / 12),
+            pago: false
         });
     }
-    autoSave();
-    refresh();
-    document.getElementById('inDesc').value = "";
-    document.getElementById('inVal').value = "";
+    saveAll();
+    updateUI();
+    document.getElementById('entryDesc').value = '';
+    document.getElementById('entryValue').value = '';
 }
 
-function deleteRow(id) {
-    if(confirm("Excluir este registro?")) { 
-        db = db.filter(i => i.id !== id); 
-        autoSave(); 
-        refresh(); 
+function togglePago(id) {
+    const item = transactions.find(t => t.id === id);
+    if(item) { item.pago = !item.pago; saveAll(); updateUI(); }
+}
+
+function deleteTransaction(id) {
+    if(confirm("Excluir este lançamento permanentemente?")) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveAll();
+        updateUI();
     }
 }
 
-// --- ATUALIZAÇÃO DA TELA ---
+// --- RENDERIZAÇÃO DE TELA ---
 function renderSettings() {
-    // Atualiza Dropdowns
-    document.getElementById('inCat').innerHTML = myCats.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('inMeth').innerHTML = myMeths.map(m => `<option value="${m}">${m}</option>`).join('');
+    // Dropdowns
+    document.getElementById('entryCategory').innerHTML = categories.sort().map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('entryMethod').innerHTML = methods.sort().map(m => `<option value="${m}">${m}</option>`).join('');
     
-    // Atualiza Listas de Gestão
-    document.getElementById('listCats').innerHTML = myCats.map((c, i) => `
-        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border text-[10px] font-bold">
-            <span class="text-slate-600 uppercase tracking-tighter">${c}</span>
-            <button onclick="deleteCat(${i})" class="text-rose-400 hover:text-rose-600">APAGAR</button>
+    // Listas de Gerenciamento
+    document.getElementById('categoryListUI').innerHTML = categories.map((c, i) => `
+        <div class="flex justify-between items-center bg-slate-50 p-2 px-3 rounded-xl border border-slate-100 text-[11px]">
+            <span class="font-medium text-slate-700">${c}</span>
+            <div class="flex gap-3">
+                <button onclick="editCategory(${i})" class="text-blue-500 font-bold">EDIT</button>
+                <button onclick="deleteCategory(${i})" class="text-red-400 font-bold">SAIR</button>
+            </div>
         </div>`).join('');
-
-    document.getElementById('listMeths').innerHTML = myMeths.map((m, i) => `
-        <div class="flex justify-between items-center bg-blue-50 p-2 rounded-xl border border-blue-100 text-[10px] font-bold">
-            <span class="text-blue-700 uppercase tracking-tighter">${m}</span>
-            <button onclick="deleteMeth(${i})" class="text-rose-400 hover:text-rose-600">APAGAR</button>
+        
+    document.getElementById('methodListUI').innerHTML = methods.map((m, i) => `
+        <div class="flex justify-between items-center bg-slate-50 p-2 px-3 rounded-xl border border-slate-100 text-[11px]">
+            <span class="font-medium text-slate-700">${m}</span>
+            <div class="flex gap-3">
+                <button onclick="editMethod(${i})" class="text-blue-500 font-bold">EDIT</button>
+                <button onclick="deleteMethod(${i})" class="text-red-400 font-bold">SAIR</button>
+            </div>
         </div>`).join('');
 }
 
-function refresh() {
-    const selM = MONTHS.indexOf(document.getElementById('filterM').value);
-    const selY = parseInt(document.getElementById('filterY').value);
-    const filtered = db.filter(i => i.mIdx === selM && i.year === selY);
+function updateUI() {
+    const filterM = document.getElementById('filterMonth').value;
+    const filterY = parseInt(document.getElementById('filterYear').value);
+    const mIdx = MONTHS.indexOf(filterM);
+
+    const filtered = transactions.filter(t => t.monthIndex === mIdx && t.year === filterY);
     
-    const inc = filtered.filter(i => i.type === 'income').reduce((s, i) => s + i.val, 0);
-    const exp = filtered.filter(i => i.type === 'expense').reduce((s, i) => s + i.val, 0);
+    const inc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.value, 0);
+    const exp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.value, 0);
+    const balance = inc - exp;
 
-    document.getElementById('displayIncome').innerText = inc.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('displayExpense').innerText = exp.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('displayBalance').innerText = (inc - exp).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('totalIncomeDisplay').innerText = inc.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('totalExpenseDisplay').innerText = exp.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+    document.getElementById('balanceDisplay').innerText = balance.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 
-    document.getElementById('tableBody').innerHTML = filtered.map(item => `
-        <tr class="text-sm">
-            <td class="py-4">
-                <div class="font-bold text-slate-800">${item.desc} <span class="text-[10px] text-slate-400 font-normal">${item.label}</span></div>
-                <div class="flex gap-1 mt-1">
-                    <span class="text-[9px] bg-slate-100 px-1 rounded font-bold text-slate-500 border uppercase">${item.cat}</span>
-                    <span class="text-[9px] bg-blue-50 text-blue-600 px-1 rounded font-bold border border-blue-100 uppercase">${item.meth}</span>
+    // Estilo do card de saldo
+    const bCard = document.getElementById('balanceCard');
+    bCard.className = `bg-white p-6 rounded-3xl shadow-lg border-2 ${balance >= 0 ? 'border-emerald-100 text-emerald-600' : 'border-rose-100 text-rose-600'}`;
+
+    document.getElementById('transactionTableUI').innerHTML = filtered.sort((a,b) => a.pago - b.pago).map(t => `
+        <tr class="text-xs transition-all ${t.pago ? 'opacity-40 bg-slate-50/50' : ''}">
+            <td class="py-4 text-center">
+                <button onclick="togglePago(${t.id})" 
+                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white shadow-inner' : 'border-slate-300 text-transparent hover:border-emerald-400'}">
+                    <span class="text-[10px]">✓</span>
+                </button>
+            </td>
+            <td class="py-4 pl-2">
+                <div class="font-bold text-slate-800 ${t.pago ? 'line-through' : ''}">${t.desc}</div>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-[8px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-bold uppercase">${t.category}</span>
+                    <span class="text-[8px] bg-blue-100 px-1.5 py-0.5 rounded text-blue-600 font-bold uppercase">${t.method}</span>
+                    <span class="text-[8px] text-slate-400 font-medium ml-1">${t.installment}</span>
                 </div>
             </td>
-            <td class="text-right font-bold ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
-                ${item.val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+            <td class="text-right font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                ${t.value.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
             </td>
-            <td class="text-right">
-                <button onclick="deleteRow(${item.id})" class="text-slate-200 hover:text-rose-500 px-2 font-bold transition">✕</button>
+            <td class="text-right pr-2">
+                <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-red-500 transition-colors font-bold text-lg">✕</button>
             </td>
         </tr>`).join('');
 }
 
-// INICIALIZAÇÃO AUTOMÁTICA
+// --- INICIALIZAÇÃO ---
 (function init() {
     const now = new Date();
-    ['inMonth', 'filterM'].forEach(id => {
+    ['entryMonth', 'filterMonth'].forEach(id => {
         const el = document.getElementById(id);
-        MONTHS.forEach(m => { el.innerHTML += `<option value="${m}">${m}</option>`; });
+        MONTHS.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = opt.innerText = m;
+            el.appendChild(opt);
+        });
         el.value = MONTHS[now.getMonth()];
     });
-    ['inYear', 'filterY'].forEach(id => document.getElementById(id).value = now.getFullYear());
+    
+    document.getElementById('entryYear').value = now.getFullYear();
+    document.getElementById('filterYear').value = now.getFullYear();
+
     renderSettings();
-    refresh();
+    updateUI();
 })();
