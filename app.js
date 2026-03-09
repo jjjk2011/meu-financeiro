@@ -1,177 +1,125 @@
-// CHAVES OFICIAIS DO BANCO
-const DB_NAME = 'financas_main_db_v2';
-const DB_METHODS = 'financas_methods_db_v2';
-const DB_CATS = 'financas_cats_db_v2';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Financeiro Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 p-2 md:p-8">
 
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-slate-800 text-white p-4 mb-6 rounded-2xl flex flex-wrap justify-between items-center gap-4 shadow-lg">
+            <div>
+                <h4 class="font-bold text-sm text-emerald-400 uppercase tracking-wider">Banco de Dados</h4>
+                <p class="text-[10px] opacity-70 font-medium">Use Importar para restaurar seus dados</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportarBanco()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold transition uppercase">📥 Exportar</button>
+                <label class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer transition uppercase text-center">
+                    📤 Importar
+                    <input type="file" class="hidden" onchange="importarBanco(event)">
+                </label>
+            </div>
+        </div>
 
-// Carregar dados iniciais
-let transactions = JSON.parse(localStorage.getItem(DB_NAME)) || [];
-let methods = JSON.parse(localStorage.getItem(DB_METHODS)) || ['Dinheiro'];
-let categories = JSON.parse(localStorage.getItem(DB_CATS)) || ['Geral'];
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-emerald-500 p-6 rounded-3xl shadow-lg text-white">
+                <p class="text-[10px] opacity-80 uppercase font-bold mb-1">Entradas</p>
+                <h2 id="totalIncomeDisplay" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+            <div class="bg-rose-500 p-6 rounded-3xl shadow-lg text-white">
+                <p class="text-[10px] opacity-80 uppercase font-bold mb-1">Saídas</p>
+                <h2 id="totalExpenseDisplay" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+            <div id="balanceCard" class="bg-white p-6 rounded-3xl shadow-lg border-2 border-slate-100 transition-colors">
+                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Saldo Líquido</p>
+                <h2 id="balanceDisplay" class="text-3xl font-bold">R$ 0,00</h2>
+            </div>
+        </div>
 
-function saveAll() {
-    localStorage.setItem(DB_NAME, JSON.stringify(transactions));
-    localStorage.setItem(DB_METHODS, JSON.stringify(methods));
-    localStorage.setItem(DB_CATS, JSON.stringify(categories));
-}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold mb-6 text-slate-800">Novo Lançamento</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                                <select id="entryType" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
+                                    <option value="income">Receita (+)</option>
+                                    <option value="expense" selected>Despesa (-)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Categoria</label>
+                                <div class="flex gap-1">
+                                    <select id="entryCategory" class="flex-grow p-3 bg-slate-50 border rounded-2xl outline-none text-xs"></select>
+                                    <button onclick="addNewCategory()" class="bg-slate-200 px-3 rounded-2xl font-bold hover:bg-slate-300">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input id="entryDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input id="entryValue" type="number" placeholder="Valor R$" class="p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
+                            <input id="entryInstallments" type="number" placeholder="Parcelas (1)" class="p-3 bg-slate-50 border rounded-2xl outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Cartão / Banco</label>
+                            <div class="flex gap-1">
+                                <select id="entryMethod" class="flex-grow p-3 bg-slate-50 border rounded-2xl outline-none text-xs"></select>
+                                <button onclick="addNewMethod()" class="bg-slate-200 px-3 rounded-2xl font-bold hover:bg-slate-300">+</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <select id="entryMonth" class="p-3 bg-slate-50 border rounded-2xl text-xs"></select>
+                            <input id="entryYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-xs">
+                        </div>
+                        <button onclick="addEntry()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">Salvar no Banco</button>
+                    </div>
+                </div>
 
-// IMPORTAÇÃO ESPECIAL PARA O SEU BACKUP (Lê 'val', 'meth', 'cat')
-function importarBanco(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            
-            // Detecta se é o seu backup específico (com campo 'db')
-            if (data.db && Array.isArray(data.db)) {
-                transactions = data.db.map(t => ({
-                    id: t.id || Date.now() + Math.random(),
-                    type: t.type,
-                    desc: t.desc,
-                    category: t.cat || 'Geral',
-                    method: t.meth || 'Dinheiro',
-                    value: t.val || 0,
-                    installment: t.label || '(1/1)',
-                    monthIndex: t.mIdx,
-                    year: t.year,
-                    pago: t.pago || false
-                }));
-                methods = data.myMeths || methods;
-                categories = data.myCats || categories;
-            } else {
-                // Formato padrão
-                transactions = data.transactions || [];
-                methods = data.methods || [];
-                categories = data.categories || [];
-            }
-            
-            saveAll();
-            alert("Backup do seu arquivo carregado com sucesso!");
-            location.reload();
-        } catch (err) { alert("Erro ao ler o arquivo de backup."); }
-    };
-    reader.readAsText(file);
-}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200">
+                        <h3 class="font-bold text-[10px] uppercase text-slate-400 mb-3 tracking-widest">Categorias</h3>
+                        <div id="categoryListUI" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200">
+                        <h3 class="font-bold text-[10px] uppercase text-slate-400 mb-3 tracking-widest">Cartões / Bancos</h3>
+                        <div id="methodListUI" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+            </div>
 
-function exportarBanco() {
-    const backup = { transactions, methods, categories };
-    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `meu_financeiro_atualizado.json`;
-    link.click();
-}
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 h-fit">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-2 border-b pb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-800">Histórico Mensal</h3>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Gestão de registros</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="filterMonth" onchange="updateUI()" class="p-2 border rounded-xl text-[10px] bg-slate-50 outline-none"></select>
+                        <input id="filterYear" type="number" onchange="updateUI()" class="p-2 border rounded-xl text-[10px] w-16 bg-slate-50 outline-none">
+                        <button onclick="limparTodoOBanco()" class="bg-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-2 rounded-xl text-[10px] font-bold transition-all border border-rose-200">LIMPAR</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[9px] font-bold text-slate-400 uppercase">
+                                <th class="pb-3 text-center w-10">Pago</th>
+                                <th class="pb-3 pl-2">Detalhes</th>
+                                <th class="pb-3 text-right">Valor</th>
+                                <th class="pb-3 text-right w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableUI" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-// LANÇAMENTOS
-function addEntry() {
-    const type = document.getElementById('entryType').value;
-    const desc = document.getElementById('entryDesc').value.trim();
-    const value = Math.abs(parseFloat(document.getElementById('entryValue').value));
-    const installments = parseInt(document.getElementById('entryInstallments').value) || 1;
-    const cat = document.getElementById('entryCategory').value;
-    const met = document.getElementById('entryMethod').value;
-    const mon = document.getElementById('entryMonth').value;
-    const yea = parseInt(document.getElementById('entryYear').value);
-
-    if(!desc || isNaN(value)) return alert("Preencha descrição e valor.");
-
-    const startIdx = MONTHS.indexOf(mon);
-
-    for(let i=0; i < installments; i++) {
-        const absIdx = startIdx + i;
-        transactions.push({
-            id: Date.now() + i + Math.random(),
-            type, desc, category: cat, method: met,
-            value: value / installments,
-            installment: `(${i+1}/${installments})`,
-            monthIndex: absIdx % 12,
-            year: yea + Math.floor(absIdx / 12),
-            pago: false
-        });
-    }
-    saveAll(); updateUI();
-    document.getElementById('entryDesc').value = '';
-    document.getElementById('entryValue').value = '';
-}
-
-function togglePago(id) {
-    const t = transactions.find(x => x.id === id);
-    if(t) { t.pago = !t.pago; saveAll(); updateUI(); }
-}
-
-function deleteTransaction(id) {
-    if(confirm("Excluir?")) { transactions = transactions.filter(t => t.id !== id); saveAll(); updateUI(); }
-}
-
-// RENDERIZAÇÃO
-function renderSettings() {
-    document.getElementById('entryCategory').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('entryMethod').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
-    
-    document.getElementById('categoryListUI').innerHTML = categories.map((c, i) => `
-        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border text-[10px] mb-1">
-            <span>${c}</span>
-            <button onclick="deleteCategory(${i})" class="text-red-500">X</button>
-        </div>`).join('');
-        
-    document.getElementById('methodListUI').innerHTML = methods.map((m, i) => `
-        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl border text-[10px] mb-1">
-            <span>${m}</span>
-            <button onclick="deleteMethod(${i})" class="text-red-500">X</button>
-        </div>`).join('');
-}
-
-function updateUI() {
-    const filterM = document.getElementById('filterMonth').value;
-    const filterY = parseInt(document.getElementById('filterYear').value);
-    const mIdx = MONTHS.indexOf(filterM);
-
-    const filtered = transactions.filter(t => t.monthIndex === mIdx && t.year === filterY);
-    const inc = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.value, 0);
-    const exp = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.value, 0);
-
-    document.getElementById('totalIncomeDisplay').innerText = inc.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('totalExpenseDisplay').innerText = exp.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById('balanceDisplay').innerText = (inc - exp).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-
-    document.getElementById('transactionTableUI').innerHTML = filtered.sort((a,b) => a.pago - b.pago).map(t => `
-        <tr class="text-xs transition-all ${t.pago ? 'opacity-40 bg-slate-50/50' : ''}">
-            <td class="py-4 text-center">
-                <button onclick="togglePago(${t.id})" 
-                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center ${t.pago ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-transparent'}">
-                    ✓
-                </button>
-            </td>
-            <td class="py-4 pl-2">
-                <div class="font-bold ${t.pago ? 'line-through' : ''}">${t.desc} <span class="text-[8px] font-normal text-slate-400">${t.installment}</span></div>
-                <div class="text-[8px] uppercase font-bold text-blue-500">${t.method} | ${t.category}</div>
-            </td>
-            <td class="text-right font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
-                ${t.value.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
-            </td>
-            <td class="text-right pr-2">
-                <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-red-500 text-lg font-bold">✕</button>
-            </td>
-        </tr>`).join('');
-}
-
-function addNewCategory() { const n = prompt("Nova categoria:"); if(n) { categories.push(n); saveAll(); renderSettings(); } }
-function addNewMethod() { const n = prompt("Novo Banco:"); if(n) { methods.push(n); saveAll(); renderSettings(); } }
-function deleteCategory(i) { if(confirm("Apagar?")) { categories.splice(i,1); saveAll(); renderSettings(); } }
-function deleteMethod(i) { if(confirm("Apagar?")) { methods.splice(i,1); saveAll(); renderSettings(); } }
-
-window.onload = function() {
-    const now = new Date();
-    ['entryMonth', 'filterMonth'].forEach(id => {
-        const el = document.getElementById(id);
-        MONTHS.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
-        el.value = MONTHS[now.getMonth()];
-    });
-    document.getElementById('entryYear').value = document.getElementById('filterYear').value = now.getFullYear();
-    renderSettings();
-    updateUI();
-};
+    <script src="app.js"></script>
+</body>
+</html>
