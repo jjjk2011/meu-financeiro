@@ -69,7 +69,7 @@ async function syncToCloud() {
     render();
 }
 
-// --- IMPORTAÇÃO DO BACKUP JSON ---
+// --- IMPORTAÇÃO DO BACKUP JSON CORRIGIDA ---
 function importarParaNuvem(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -77,30 +77,44 @@ function importarParaNuvem(event) {
     reader.onload = async (e) => {
         try {
             const json = JSON.parse(e.target.result);
-            if (json.db) {
+            
+            // Verifica se o arquivo tem a estrutura correta (chave "db")
+            if (json && json.db) {
+                // Mapeia os dados do seu arquivo para o formato do Firebase
                 dados.transacoes = json.db.map(t => ({
-                    id: t.id || Math.random(),
-                    tipo: t.type,
-                    desc: t.desc,
-                    valor: t.val || 0,
+                    id: t.id || Date.now() + Math.random(),
+                    tipo: t.type === 'income' ? 'income' : 'expense',
+                    desc: t.desc || 'Sem descrição',
+                    valor: parseFloat(t.val) || 0,
                     categoria: (t.cat || 'GERAL').toUpperCase(),
                     metodo: (t.meth || 'DINHEIRO').toUpperCase(),
                     parc: t.label || '',
-                    mesIdx: t.mIdx,
-                    ano: t.year,
+                    mesIdx: parseInt(t.mIdx) || 0,
+                    ano: parseInt(t.year) || 2026,
                     pago: t.pago || false
                 }));
-                if(json.myCats) dados.categorias = json.myCats.map(c => c.toUpperCase());
-                if(json.myMeths) dados.metodos = json.myMeths.map(m => m.toUpperCase());
+
+                // Importa também as suas categorias e bancos personalizados do arquivo
+                if(json.myCats && Array.isArray(json.myCats)) {
+                    dados.categorias = json.myCats.map(c => c.toUpperCase());
+                }
+                if(json.myMeths && Array.isArray(json.myMeths)) {
+                    dados.metodos = json.myMeths.map(m => m.toUpperCase());
+                }
                 
+                // Salva tudo na nuvem de uma vez
                 await syncToCloud();
-                alert("Backup importado com sucesso para a nuvem!");
+                alert("Sucesso! " + dados.transacoes.length + " lançamentos foram migrados para a nuvem.");
+            } else {
+                alert("O arquivo selecionado não parece ser um backup válido deste sistema.");
             }
-        } catch (err) { alert("Arquivo JSON inválido."); }
+        } catch (err) { 
+            console.error(err);
+            alert("Erro crítico ao processar o arquivo. Verifique o console."); 
+        }
     };
     reader.readAsText(file);
 }
-
 // --- GESTÃO DE LANÇAMENTOS ---
 function adicionar() {
     const desc = document.getElementById('inDesc').value;
