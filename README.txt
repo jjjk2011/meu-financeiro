@@ -1,58 +1,38 @@
-COMO USAR
+💰 Financeiro Pro Cloud
+Um gestor financeiro pessoal leve, moderno e totalmente sincronizado na nuvem. Este projeto foi evoluído de um sistema local para uma aplicação completa com autenticação de usuários e banco de dados em tempo real.
 
-1. Abra o arquivo `index.html` no navegador (arraste para o browser ou use um servidor local).
-2. O aplicativo roda totalmente no navegador e salva dados em localStorage.
+🚀 O que ele faz?
+Sincronização Cloud: Seus dados não ficam mais presos ao navegador. Acesse do PC ou do celular e veja tudo em tempo real.
+Controle de Acesso: Sistema de login seguro via Firebase Auth (e-mail e senha).
+Gestão de Lançamentos: Registro de receitas e despesas com suporte a parcelamento automático.
+Filtros Inteligentes: Histórico mensal detalhado com cálculo de saldo líquido automático.
+Customização Total: Adicione ou remova suas próprias categorias e métodos de pagamento (bancos/cartões) diretamente pela interface.
+Migração Fácil: Botão de importação para trazer dados de backups em JSON sem dor de cabeça.
 
-FUNCIONALIDADES PRINCIPAIS
-- Adicionar receitas
-- Adicionar despesas (à vista ou parceladas)
-- Parcelamento automático com distribuição em centavos
-- Filtros por mês e ano e resumo mensal
+🛠️ Tecnologias Utilizadas
+Frontend: HTML5, Tailwind CSS (estilização moderna e responsiva).
+Backend como Serviço (BaaS): Firebase (Authentication e Firestore Database).
+Lógica: JavaScript ES6+ utilizando módulos oficiais do Firebase.
+Hospedagem: Otimizado para rodar na Vercel.
 
-NOTAS DE ALTERAÇÕES (março/2026)
+📦 Como Instalar
+Clone o repositório ou baixe os arquivos index.html e app.js.
+Configure o Firebase:
+Crie um projeto no Console do Firebase.
+Ative o Authentication (E-mail/Senha).
+Crie um banco de dados Firestore e configure as regras de acesso.
+Substitua o objeto firebaseConfig no index.html pelas suas credenciais.
+Suba para a Vercel: Basta conectar seu GitHub e o deploy é automático.
 
-- Visual principal migrado para Tailwind via CDN; marcação usa utilitários Tailwind.
-- `style.css` reduzido para um conjunto mínimo de regras auxiliares (animação do badge, cabeçalho sticky, botões de exclusão) para evitar conflitos com utilitários.
-- `app.js` atualizado: o badge do título da tabela agora é renderizado como HTML com atributos ARIA e uma animação leve para melhorar acessibilidade.
+📝 Regras de Segurança (Firestore)
+Para garantir que cada usuário veja apenas os seus próprios dados, utilize a seguinte regra no seu Firebase:
 
-TESTES RÁPIDOS (como verificar no navegador)
-
-1) Abrir `index.html` no navegador moderno (Chrome, Edge ou Firefox).
-
-2) Adicionar uma despesa simples:
-   - Preencha "Descrição" e "Valor" (ex.: 150.00), selecione um cartão (ou crie um), e clique em "Adicionar Despesa".
-   - Verifique se a despesa aparece na tabela e se o badge atualiza o total.
-
-3) Testar parcelamento:
-   - Adicione uma despesa com Parcelas = 3 e um valor com centavos (ex.: 100.01).
-   - Confirme que as parcelas somam exatamente o valor informado.
-
-4) Testar filtro de mês/ano e persistência:
-   - Altere os selects de filtro (mês/ano) e observe o badge — ele deve exibir mês/ano quando aplicável.
-   - Recarregue a página: os filtros devem ser mantidos (persistência via localStorage).
-
-5) Acessibilidade do badge:
-   - O badge possui role="status" e aria-live="polite" para que leitores de tela anunciem atualizações.
-
-PRÓXIMOS PASSOS SUGERIDOS
-
-- Se desejar, posso completar a migração para Tailwind removendo todas as regras restantes em `style.css` e convertendo quaisquer classes personalizadas no HTML.
-- Também posso adicionar testes automatizados (Node + jsdom) para validar a lógica de parcelamento e a renderização do badge.
-
----
-
-
-COMO USAR
-
-1. Extraia o arquivo.
-2. Abra o arquivo index.html.
-3. O sistema funciona direto no navegador.
-
-FUNÇÕES
-- Adicionar receitas (salário ou extras)
-- Adicionar despesas
-- Parcelamento automático
-- Cálculo automático de saldo
-- Dados salvos no navegador
-
-Não precisa instalar nada.
+JavaScript
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+Desenvolvido para ser simples, rápido e eficiente.
