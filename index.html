@@ -14,7 +14,7 @@
     <style>
         #authScreen { display: flex; }
         #appScreen { display: none; }
-        .loading { opacity: 0.5; pointer-events: none; }
+        .loading-btn { opacity: 0.6; pointer-events: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -23,7 +23,7 @@
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
             <h1 class="font-black text-2xl text-slate-800 mb-2 uppercase italic">Financeiro Pro</h1>
-            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse sua conta</p>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Controle Cloud</p>
             <input id="authEmail" type="email" placeholder="E-mail" class="w-full p-3 bg-slate-50 border rounded-2xl mb-3 outline-none text-sm text-slate-800">
             <input id="authPass" type="password" placeholder="Senha" class="w-full p-3 bg-slate-50 border rounded-2xl mb-4 outline-none text-sm text-slate-800">
             <div class="flex gap-2">
@@ -86,7 +86,7 @@
                                 <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs dark:text-white"></select>
                                 <input id="inYear" type="number" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs dark:text-white">
                             </div>
-                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">Salvar na Nuvem</button>
+                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">Salvar Registro</button>
                         </div>
                     </div>
                 </div>
