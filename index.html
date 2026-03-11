@@ -9,7 +9,6 @@
         #authScreen { display: flex; }
         #appScreen { display: none; }
         .loading { opacity: 0.5; pointer-events: none; }
-        /* Esconder scrollbar mas manter funcionalidade */
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -18,7 +17,7 @@
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
             <h1 class="font-black text-2xl text-slate-800 mb-2 uppercase italic">Financeiro Pro</h1>
-            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse seus dados na nuvem</p>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Controle sua vida financeira</p>
             <input id="authEmail" type="email" placeholder="E-mail" class="w-full p-3 bg-slate-50 border rounded-2xl mb-3 outline-none text-sm">
             <input id="authPass" type="password" placeholder="Senha" class="w-full p-3 bg-slate-50 border rounded-2xl mb-4 outline-none text-sm">
             <div class="flex gap-2">
@@ -33,10 +32,11 @@
             
             <div class="bg-slate-800 text-white p-6 mb-6 rounded-3xl flex flex-wrap justify-between items-center gap-4 shadow-xl">
                 <div>
-                    <h1 class="font-black text-xl text-emerald-400 uppercase">Cloud Finance</h1>
-                    <p id="userDisplay" class="text-[10px] opacity-60 uppercase font-bold tracking-widest">Sincronizando...</p>
+                    <h1 class="font-black text-xl text-emerald-400 uppercase tracking-tighter">Cloud Finance</h1>
+                    <p id="userDisplay" class="text-[10px] opacity-60 uppercase font-bold tracking-widest">Sincronizado</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition">Relatório PDF</button>
                     <label class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer uppercase transition">
                         Importar JSON
                         <input type="file" class="hidden" onchange="importarParaNuvem(event)">
@@ -48,97 +48,82 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <div class="lg:col-span-1 space-y-6">
-                    
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center">
                         <div class="grid grid-cols-2 gap-2 mb-4">
-                            <div class="bg-emerald-50 p-3 rounded-2xl text-center">
-                                <span class="block text-[8px] text-emerald-600 font-bold uppercase mb-1">Entradas</span>
+                            <div class="bg-emerald-50 p-3 rounded-2xl">
                                 <span id="totalIncome" class="font-bold text-emerald-700 text-sm">R$ 0,00</span>
                             </div>
-                            <div class="bg-rose-50 p-3 rounded-2xl text-center">
-                                <span class="block text-[8px] text-rose-600 font-bold uppercase mb-1">Saídas</span>
+                            <div class="bg-rose-50 p-3 rounded-2xl">
                                 <span id="totalExpense" class="font-bold text-rose-700 text-sm">R$ 0,00</span>
                             </div>
                         </div>
-                        <div class="text-center pt-2 border-t border-slate-50">
-                            <span class="text-[9px] text-slate-400 font-bold uppercase">Saldo Líquido</span>
-                            <h2 id="totalBalance" class="text-2xl font-black text-slate-900">R$ 0,00</h2>
-                        </div>
+                        <h2 id="totalBalance" class="text-3xl font-black text-slate-900 tracking-tighter">R$ 0,00</h2>
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <h3 class="font-bold mb-4 text-slate-800 uppercase text-xs border-b pb-2">Novo Registro</h3>
+                        <h3 class="font-bold mb-4 text-slate-800 uppercase text-[10px] tracking-widest border-b pb-2">Novo Registro</h3>
                         <div class="space-y-3">
                             <select id="inType" class="w-full p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
                                 <option value="income">Receita (+)</option>
                                 <option value="expense" selected>Despesa (-)</option>
                             </select>
-                            <input id="inDesc" type="text" placeholder="Descrição (ex: Mercado)" class="w-full p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
+                            <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
                             <div class="grid grid-cols-2 gap-2">
                                 <input id="inVal" type="number" placeholder="Valor" class="p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
-                                <input id="inParc" type="number" placeholder="Parc. (1)" class="p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
+                                <input id="inParc" type="number" placeholder="Parc." class="p-3 bg-slate-50 border rounded-2xl text-sm outline-none">
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <select id="inCat" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none"></select>
-                                <select id="inMeth" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none"></select>
+                                <select id="inCat" class="p-3 bg-slate-50 border rounded-2xl text-xs"></select>
+                                <select id="inMeth" class="p-3 bg-slate-50 border rounded-2xl text-xs"></select>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <select id="inMonth" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none"></select>
-                                <input id="inYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-xs outline-none">
+                                <select id="inMonth" class="p-3 bg-slate-50 border rounded-2xl text-xs"></select>
+                                <input id="inYear" type="number" class="p-3 bg-slate-50 border rounded-2xl text-xs">
                             </div>
-                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition text-[10px] uppercase tracking-widest shadow-lg">Salvar na Nuvem</button>
+                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition text-[10px] uppercase tracking-widest">Salvar na Nuvem</button>
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 space-y-5">
                         <div>
-                            <p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Categorias</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-3">Gerenciar Categorias</p>
                             <div class="flex gap-1 mb-3">
                                 <input id="newCatInput" type="text" placeholder="Nova..." class="flex-grow p-2 bg-slate-50 border rounded-xl text-xs outline-none">
-                                <button onclick="addItemLista('categorias', 'newCatInput')" class="bg-emerald-500 text-white px-4 rounded-xl font-black hover:bg-emerald-600 transition">+</button>
+                                <button onclick="addItemLista('categorias', 'newCatInput')" class="bg-emerald-500 text-white px-3 rounded-xl">+</button>
                             </div>
-                            <div id="catListUI" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar p-1"></div>
+                            <div id="catListUI" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar"></div>
                         </div>
-
                         <div class="pt-4 border-t">
-                            <p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Bancos / Cartões</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-3">Gerenciar Bancos</p>
                             <div class="flex gap-1 mb-3">
                                 <input id="newMethInput" type="text" placeholder="Novo..." class="flex-grow p-2 bg-slate-50 border rounded-xl text-xs outline-none">
-                                <button onclick="addItemLista('metodos', 'newMethInput')" class="bg-blue-500 text-white px-4 rounded-xl font-black hover:bg-blue-600 transition">+</button>
+                                <button onclick="addItemLista('metodos', 'newMethInput')" class="bg-blue-500 text-white px-3 rounded-xl">+</button>
                             </div>
-                            <div id="methListUI" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar p-1"></div>
+                            <div id="methListUI" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="lg:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
-                    <div class="flex flex-wrap justify-between items-center mb-6 gap-3 border-b pb-4">
-                        <h3 class="font-bold text-slate-800">Histórico de Lançamentos</h3>
-                        <div class="flex items-center gap-2">
-                            <select id="fMonth" onchange="render()" class="p-2 border rounded-xl text-xs bg-slate-50 font-bold outline-none"></select>
-                            <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20 bg-slate-50 font-bold outline-none">
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h3 class="font-bold text-slate-800">Histórico</h3>
+                        <div class="flex gap-2">
+                            <select id="fMonth" onchange="render()" class="p-2 border rounded-xl text-xs bg-slate-50"></select>
+                            <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20 bg-slate-50">
                         </div>
                     </div>
-                    
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead>
-                                <tr class="text-[10px] text-slate-300 uppercase font-black tracking-widest">
-                                    <th class="pb-3 text-center w-12">Pago</th>
-                                    <th class="pb-3">Descrição / Info</th>
-                                    <th class="pb-3 text-right">Valor</th>
-                                    <th class="pb-3 text-right w-12">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-50">
-                                </tbody>
+                            <tbody id="tableBody" class="divide-y divide-slate-50"></tbody>
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -151,8 +136,7 @@
             projectId: "meufinanceiro-75b8e",
             storageBucket: "meufinanceiro-75b8e.firebasestorage.app",
             messagingSenderId: "1083437842303",
-            appId: "1:1083437842303:web:0c6f76428a738aedffa44a",
-            measurementId: "G-QFZXPY25W1"
+            appId: "1:1083437842303:web:0c6f76428a738aedffa44a"
         };
 
         const app = initializeApp(firebaseConfig);
