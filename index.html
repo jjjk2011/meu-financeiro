@@ -23,7 +23,7 @@
     <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
             <h1 class="font-black text-2xl text-slate-800 mb-2 uppercase italic">Financeiro Pro</h1>
-            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Controle Cloud</p>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse sua conta</p>
             <input id="authEmail" type="email" placeholder="E-mail" class="w-full p-3 bg-slate-50 border rounded-2xl mb-3 outline-none text-sm text-slate-800">
             <input id="authPass" type="password" placeholder="Senha" class="w-full p-3 bg-slate-50 border rounded-2xl mb-4 outline-none text-sm text-slate-800">
             <div class="flex gap-2">
@@ -44,31 +44,16 @@
                 <div class="flex flex-wrap gap-2">
                     <button onclick="toggleDarkMode()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl text-sm transition">🌓</button>
                     <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition">PDF</button>
-                    <label class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-[10px] font-bold cursor-pointer uppercase transition">
-                        Importar
-                        <input type="file" class="hidden" onchange="importarParaNuvem(event)">
-                    </label>
                     <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition">Sair</button>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
-                        <div class="grid grid-cols-2 gap-2 mb-4">
-                            <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl">
-                                <span id="totalIncome" class="font-bold text-emerald-700 dark:text-emerald-400 text-sm">R$ 0,00</span>
-                            </div>
-                            <div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-2xl">
-                                <span id="totalExpense" class="font-bold text-rose-700 dark:text-rose-400 text-sm">R$ 0,00</span>
-                            </div>
-                        </div>
-                        <h2 id="totalBalance" class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">R$ 0,00</h2>
-                    </div>
-
                     <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h3 class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">Novo Registro</h3>
+                        <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">Novo Registro</h3>
                         <div class="space-y-3">
+                            <input type="hidden" id="editId">
                             <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none dark:text-white">
                                 <option value="income">Receita (+)</option>
                                 <option value="expense" selected>Despesa (-)</option>
@@ -86,8 +71,13 @@
                                 <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs dark:text-white"></select>
                                 <input id="inYear" type="number" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs dark:text-white">
                             </div>
-                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">Salvar Registro</button>
+                            <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">Salvar na Nuvem</button>
+                            <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-2 rounded-xl text-[9px] uppercase">Cancelar Edição</button>
                         </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
+                        <h2 id="totalBalance" class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">R$ 0,00</h2>
                     </div>
                 </div>
 
