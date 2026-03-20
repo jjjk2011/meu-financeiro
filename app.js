@@ -2,12 +2,16 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 let currentUser = null;
 let filtroBusca = '';
 let toastTimeout = null;
+let activeTab = 'transacoes'; // 'transacoes' ou 'investimentos'
 
 // Valores padrão caso o banco esteja vazio
 let dados = { 
     transacoes: [], 
+    investimentos: [],
     categorias: ['ALIMENTAÇÃO', 'CONTAS', 'SAÚDE', 'LAZER', 'TRANSPORTE', 'EDUCAÇÃO'], 
-    metodos: ['DINHEIRO', 'CRÉDITO', 'DÉBITO', 'PIX', 'TRANSFERÊNCIA'] 
+    metodos: ['DINHEIRO', 'CRÉDITO', 'DÉBITO', 'PIX', 'TRANSFERÊNCIA'],
+    tiposInvestimento: ['AÇÕES', 'FIIs', 'CRIPTO', 'RENDA FIXA', 'TESOURO DIRETO', 'FUNDOS', 'PREVIDÊNCIA'],
+    corretoras: ['NU INVEST', 'XP INC', 'RICO', 'CLEAR', 'INTER', 'SANTANDER', 'BRADESCO', 'OUTROS']
 };
 
 // --- TEMA ---
@@ -53,6 +57,35 @@ function mostrarLogin() {
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('cadastroForm').style.display = 'none';
     document.getElementById('authSubtitle').innerText = 'Acesse sua conta';
+}
+
+// --- CONTROLE DE ABAS ---
+function mudarAba(aba) {
+    activeTab = aba;
+    
+    // Atualiza visual das abas
+    document.getElementById('tabTransacoes').classList.remove('bg-emerald-600', 'text-white');
+    document.getElementById('tabInvestimentos').classList.remove('bg-emerald-600', 'text-white');
+    document.getElementById('tabTransacoes').classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+    document.getElementById('tabInvestimentos').classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+    
+    if (aba === 'transacoes') {
+        document.getElementById('tabTransacoes').classList.remove('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+        document.getElementById('tabTransacoes').classList.add('bg-emerald-600', 'text-white');
+        document.getElementById('areaTransacoes').style.display = 'block';
+        document.getElementById('areaInvestimentos').style.display = 'none';
+        document.getElementById('formTitle').innerText = "➕ NOVO REGISTRO";
+        resetForm();
+    } else {
+        document.getElementById('tabInvestimentos').classList.remove('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+        document.getElementById('tabInvestimentos').classList.add('bg-emerald-600', 'text-white');
+        document.getElementById('areaTransacoes').style.display = 'none';
+        document.getElementById('areaInvestimentos').style.display = 'block';
+        document.getElementById('formTitleInvest').innerText = "💰 NOVO INVESTIMENTO";
+        resetFormInvest();
+    }
+    
+    render();
 }
 
 // --- LOGIN ---
@@ -200,8 +233,11 @@ async function loadFromCloud() {
         if (snap.exists()) {
             const d = snap.data();
             dados.transacoes = d.transacoes || [];
+            dados.investimentos = d.investimentos || [];
             if(d.categorias && d.categorias.length > 0) dados.categorias = d.categorias;
             if(d.metodos && d.metodos.length > 0) dados.metodos = d.metodos;
+            if(d.tiposInvestimento && d.tiposInvestimento.length > 0) dados.tiposInvestimento = d.tiposInvestimento;
+            if(d.corretoras && d.corretoras.length > 0) dados.corretoras = d.corretoras;
             
             render();
             showToast('Dados carregados da nuvem', 'success');
@@ -221,9 +257,16 @@ async function syncToCloud() {
     if (!currentUser) return;
     
     const btn = document.getElementById('btnSave');
-    btn.classList.add('loading-btn');
-    const originalText = btn.textContent;
-    btn.textContent = 'SALVANDO...';
+    const btnInvest = document.getElementById('btnSaveInvest');
+    
+    if (btn) {
+        btn.classList.add('loading-btn');
+        btn.textContent = 'SALVANDO...';
+    }
+    if (btnInvest) {
+        btnInvest.classList.add('loading-btn');
+        btnInvest.textContent = 'SALVANDO...';
+    }
     
     try {
         const docRef = window.fb_funcs.doc(window.db, "users", currentUser.uid);
@@ -233,8 +276,14 @@ async function syncToCloud() {
     } catch (err) {
         showToast('Erro ao salvar', 'error');
     } finally {
-        btn.classList.remove('loading-btn');
-        btn.textContent = document.getElementById('editId').value ? 'ATUALIZAR' : 'SALVAR NA NUVEM';
+        if (btn) {
+            btn.classList.remove('loading-btn');
+            btn.textContent = document.getElementById('editId').value ? 'ATUALIZAR' : '💾 SALVAR NA NUVEM';
+        }
+        if (btnInvest) {
+            btnInvest.classList.remove('loading-btn');
+            btnInvest.textContent = '💾 SALVAR INVESTIMENTO';
+        }
     }
 }
 
@@ -269,10 +318,126 @@ async function addItemLista(tipo, inputId) {
     dados[tipo].push(valor);
     input.value = '';
     await syncToCloud();
-    showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
+    
+    let nomeTipo = tipo;
+    if (tipo === 'categorias') nomeTipo = 'Categoria';
+    if (tipo === 'metodos') nomeTipo = 'Método';
+    if (tipo === 'tiposInvestimento') nomeTipo = 'Tipo de investimento';
+    if (tipo === 'corretoras') nomeTipo = 'Corretora';
+    
+    showToast(`${nomeTipo} adicionado`, 'success');
 }
 
-// --- LÓGICA DE REGISTROS ---
+// --- LÓGICA DE INVESTIMENTOS ---
+function adicionarInvestimento() {
+    const editId = document.getElementById('editIdInvest').value;
+    const ativo = document.getElementById('inAtivo').value.trim();
+    const tipo = document.getElementById('inTipoInvest').value;
+    const corretora = document.getElementById('inCorretora').value;
+    const quantidade = parseFloat(document.getElementById('inQuantidade').value);
+    const precoMedio = parseFloat(document.getElementById('inPrecoMedio').value);
+    const precoAtual = parseFloat(document.getElementById('inPrecoAtual').value) || precoMedio;
+    const dataCompra = document.getElementById('inDataCompra').value;
+    
+    if (!ativo || ativo.length < 2) {
+        showToast('Digite o nome do ativo', 'error');
+        return;
+    }
+    if (isNaN(quantidade) || quantidade <= 0) {
+        showToast('Quantidade deve ser maior que zero', 'error');
+        return;
+    }
+    if (isNaN(precoMedio) || precoMedio <= 0) {
+        showToast('Preço médio deve ser maior que zero', 'error');
+        return;
+    }
+    if (!tipo || !corretora) {
+        showToast('Selecione tipo e corretora', 'error');
+        return;
+    }
+
+    const valorTotal = quantidade * precoMedio;
+    const valorAtual = quantidade * precoAtual;
+    const lucroPrejuizo = valorAtual - valorTotal;
+    const rentabilidade = ((precoAtual / precoMedio) - 1) * 100;
+
+    if (editId) {
+        // MODO EDIÇÃO
+        const index = dados.investimentos.findIndex(t => String(t.id) === String(editId));
+        if (index !== -1) {
+            dados.investimentos[index] = {
+                ...dados.investimentos[index],
+                ativo: ativo.toUpperCase(),
+                tipo: tipo,
+                corretora: corretora,
+                quantidade: quantidade,
+                precoMedio: precoMedio,
+                precoAtual: precoAtual,
+                dataCompra: dataCompra,
+                valorTotal: valorTotal,
+                valorAtual: valorAtual,
+                lucroPrejuizo: lucroPrejuizo,
+                rentabilidade: rentabilidade,
+                atualizadoEm: new Date().toISOString()
+            };
+            showToast('Investimento atualizado', 'success');
+            resetFormInvest();
+            syncToCloud();
+        }
+    } else {
+        // MODO NOVO INVESTIMENTO
+        dados.investimentos.push({
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            ativo: ativo.toUpperCase(),
+            tipo: tipo,
+            corretora: corretora,
+            quantidade: quantidade,
+            precoMedio: precoMedio,
+            precoAtual: precoAtual,
+            dataCompra: dataCompra,
+            valorTotal: valorTotal,
+            valorAtual: valorAtual,
+            lucroPrejuizo: lucroPrejuizo,
+            rentabilidade: rentabilidade,
+            criadoEm: new Date().toISOString(),
+            atualizadoEm: new Date().toISOString()
+        });
+        
+        document.getElementById('inAtivo').value = '';
+        document.getElementById('inQuantidade').value = '';
+        document.getElementById('inPrecoMedio').value = '';
+        document.getElementById('inPrecoAtual').value = '';
+        document.getElementById('inDataCompra').value = new Date().toISOString().split('T')[0];
+        
+        showToast('Investimento adicionado', 'success');
+        syncToCloud();
+    }
+}
+
+// --- ATUALIZAR PREÇO ATUAL ---
+function atualizarPrecoAtual(id, novoPreco) {
+    const invest = dados.investimentos.find(x => String(x.id) === String(id));
+    if (invest) {
+        invest.precoAtual = novoPreco;
+        invest.valorAtual = invest.quantidade * novoPreco;
+        invest.lucroPrejuizo = invest.valorAtual - invest.valorTotal;
+        invest.rentabilidade = ((novoPreco / invest.precoMedio) - 1) * 100;
+        invest.atualizadoEm = new Date().toISOString();
+        syncToCloud();
+        showToast('Preço atualizado', 'success');
+    }
+}
+
+// --- EXCLUIR INVESTIMENTO ---
+function excluirInvestimento(id) {
+    if (confirm("Tem certeza que deseja excluir este investimento?")) { 
+        dados.investimentos = dados.investimentos.filter(t => String(t.id) !== String(id)); 
+        syncToCloud();
+        showToast('Investimento excluído', 'success');
+    }
+}
+
+// --- LÓGICA DE TRANSAÇÕES (existente) ---
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -339,9 +504,9 @@ function adicionar() {
                 categoria: categoria,
                 metodo: metodo,
                 parc: parc > 1 ? `${i + 1}/${parc}` : '',
-                parcTotal: parc > 1 ? parc : null, // Para identificar grupo de parcelas
+                parcTotal: parc > 1 ? parc : null,
                 parcAtual: parc > 1 ? i + 1 : null,
-                descOriginal: parc > 1 ? desc : null, // Descrição original do grupo
+                descOriginal: parc > 1 ? desc : null,
                 mesIdx: curIdx % 12,
                 ano: anoBase + Math.floor(curIdx / 12),
                 pago: false,
@@ -381,6 +546,29 @@ function excluirTodasParcelas(descOriginal, parcTotal) {
 
 // --- RENDER ---
 function render() {
+    if (activeTab === 'transacoes') {
+        renderTransacoes();
+    } else {
+        renderInvestimentos();
+    }
+    
+    // Atualiza selects (comuns)
+    const updateSelect = (id, list) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const valorAtual = el.value;
+            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+            if(list.includes(valorAtual)) el.value = valorAtual;
+        }
+    };
+    updateSelect('inCat', dados.categorias);
+    updateSelect('inMeth', dados.metodos);
+    updateSelect('inTipoInvest', dados.tiposInvestimento);
+    updateSelect('inCorretora', dados.corretoras);
+}
+
+// --- RENDER TRANSAÇÕES ---
+function renderTransacoes() {
     const mIdx = MESES.indexOf(document.getElementById('fMonth').value);
     const yVal = parseInt(document.getElementById('fYear').value);
     const searchTerm = filtroBusca.toLowerCase();
@@ -444,7 +632,7 @@ function render() {
         contadorEl.innerText = filtrados.length;
     }
 
-    // TABELA COM RECEITAS E DESPESAS SEPARADAS
+    // TABELA DE TRANSAÇÕES
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
 
@@ -458,7 +646,7 @@ function render() {
             </tr>`;
     } else {
         let html = '';
-        let gruposParcelas = {}; // Para evitar botões duplicados
+        let gruposParcelas = {};
         
         // RECEITAS
         if (receitas.length > 0) {
@@ -520,7 +708,7 @@ function render() {
                 </td>
             </tr>`;
             
-            gruposParcelas = {}; // Reset para despesas
+            gruposParcelas = {};
             
             despesas.forEach(t => {
                 const idSeguro = String(t.id).replace(/'/g, "\\'");
@@ -566,21 +754,106 @@ function render() {
         
         tableBody.innerHTML = html;
     }
-
-    // Atualiza selects
-    const updateSelect = (id, list) => {
-        const el = document.getElementById(id);
-        if (el) {
-            const valorAtual = el.value;
-            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
-            if(list.includes(valorAtual)) el.value = valorAtual;
-        }
-    };
-    updateSelect('inCat', dados.categorias);
-    updateSelect('inMeth', dados.metodos);
 }
 
-// --- CRUD OPERATIONS ---
+// --- RENDER INVESTIMENTOS ---
+function renderInvestimentos() {
+    const investimentos = dados.investimentos || [];
+    
+    // Calcula totais
+    const totalInvestido = investimentos.reduce((s, t) => s + t.valorTotal, 0);
+    const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
+    const totalLucro = totalAtual - totalInvestido;
+    const rentabilidadeTotal = totalInvestido > 0 ? (totalLucro / totalInvestido) * 100 : 0;
+    
+    // Atualiza cards de resumo
+    document.getElementById('totalInvestido').innerText = totalInvestido.toLocaleString('pt-BR', {
+        style: 'currency', currency: 'BRL'
+    });
+    
+    document.getElementById('totalAtual').innerText = totalAtual.toLocaleString('pt-BR', {
+        style: 'currency', currency: 'BRL'
+    });
+    
+    const lucroEl = document.getElementById('totalLucro');
+    lucroEl.innerText = totalLucro.toLocaleString('pt-BR', {
+        style: 'currency', currency: 'BRL'
+    });
+    lucroEl.className = `font-bold ${totalLucro >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+    
+    const rentEl = document.getElementById('rentabilidadeTotal');
+    rentEl.innerText = `${rentabilidadeTotal >= 0 ? '+' : ''}${rentabilidadeTotal.toFixed(2)}%`;
+    rentEl.className = `font-bold ${rentabilidadeTotal >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+    
+    // Tabela de investimentos
+    const tableBody = document.getElementById('investTableBody');
+    if (!tableBody) return;
+    
+    if (investimentos.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-12 opacity-50">
+                    <span class="text-4xl block mb-2">📈</span>
+                    Nenhum investimento cadastrado
+                </td>
+            </tr>`;
+    } else {
+        // Ordena por data (mais recentes primeiro)
+        investimentos.sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+        
+        tableBody.innerHTML = investimentos.map(t => {
+            const idSeguro = String(t.id).replace(/'/g, "\\'");
+            const rentColor = t.rentabilidade >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const lucroColor = t.lucroPrejuizo >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            
+            return `
+            <tr class="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td class="py-3 px-2 cursor-pointer" onclick="prepararEdicaoInvest('${idSeguro}')">
+                    <div class="font-bold text-sm dark:text-slate-200">${t.ativo}</div>
+                    <div class="text-[8px] text-blue-500">${t.tipo}</div>
+                </td>
+                <td class="py-3 text-xs">${t.corretora}</td>
+                <td class="py-3 text-right">${t.quantidade}</td>
+                <td class="py-3 text-right">${t.precoMedio.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</td>
+                <td class="py-3 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                        <span class="${rentColor}">${t.precoAtual.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</span>
+                        <button onclick="atualizarPrecoDialog('${idSeguro}', ${t.precoAtual})" 
+                                class="text-slate-300 hover:text-blue-500 hover:scale-110 transition-all text-xs">
+                            ✏️
+                        </button>
+                    </div>
+                </td>
+                <td class="py-3 text-right ${lucroColor}">
+                    ${t.lucroPrejuizo.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                </td>
+                <td class="py-3 text-right ${rentColor}">
+                    ${t.rentabilidade >= 0 ? '+' : ''}${t.rentabilidade.toFixed(2)}%
+                </td>
+                <td class="text-right px-2">
+                    <button onclick="excluirInvestimento('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
+                        ✕
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+// --- DIÁLOGO PARA ATUALIZAR PREÇO ---
+function atualizarPrecoDialog(id, precoAtual) {
+    const novoPreco = prompt("Digite o novo preço atual:", precoAtual);
+    if (novoPreco !== null) {
+        const preco = parseFloat(novoPreco.replace(',', '.'));
+        if (!isNaN(preco) && preco > 0) {
+            atualizarPrecoAtual(id, preco);
+        } else {
+            showToast('Valor inválido', 'error');
+        }
+    }
+}
+
+// --- CRUD OPERATIONS TRANSAÇÕES ---
 function excluir(id) {
     if (confirm("Tem certeza que deseja excluir este registro?")) { 
         dados.transacoes = dados.transacoes.filter(t => String(t.id) !== String(id)); 
@@ -614,6 +887,12 @@ function initDateFilters() {
     const inYearEl = document.getElementById('inYear');
     if (fYearEl) fYearEl.value = now.getFullYear();
     if (inYearEl) inYearEl.value = now.getFullYear();
+    
+    // Data padrão para investimentos
+    const dataCompraEl = document.getElementById('inDataCompra');
+    if (dataCompraEl) {
+        dataCompraEl.value = now.toISOString().split('T')[0];
+    }
 }
 
 function filtrarTabela(texto) {
@@ -621,7 +900,7 @@ function filtrarTabela(texto) {
     render();
 }
 
-// --- FORM ---
+// --- FORM TRANSAÇÕES ---
 function resetForm() {
     document.getElementById('editId').value = '';
     document.getElementById('inDesc').value = '';
@@ -663,11 +942,55 @@ function prepararEdicao(id) {
     showToast('✏️ Modo edição ativado', 'info');
 }
 
-// --- PDF EXPORT ---
+// --- FORM INVESTIMENTOS ---
+function resetFormInvest() {
+    document.getElementById('editIdInvest').value = '';
+    document.getElementById('inAtivo').value = '';
+    document.getElementById('inQuantidade').value = '';
+    document.getElementById('inPrecoMedio').value = '';
+    document.getElementById('inPrecoAtual').value = '';
+    document.getElementById('inDataCompra').value = new Date().toISOString().split('T')[0];
+    document.getElementById('btnCancelEditInvest').classList.add('hidden');
+    document.getElementById('formTitleInvest').innerText = "💰 NOVO INVESTIMENTO";
+    document.getElementById('btnSaveInvest').innerText = "💾 SALVAR INVESTIMENTO";
+}
+
+function prepararEdicaoInvest(id) {
+    const t = dados.investimentos.find(x => String(x.id) === String(id));
+    if (!t) {
+        showToast('Erro ao carregar investimento', 'error');
+        return;
+    }
+    
+    document.getElementById('editIdInvest').value = t.id;
+    document.getElementById('inAtivo').value = t.ativo;
+    document.getElementById('inTipoInvest').value = t.tipo;
+    document.getElementById('inCorretora').value = t.corretora;
+    document.getElementById('inQuantidade').value = t.quantidade;
+    document.getElementById('inPrecoMedio').value = t.precoMedio;
+    document.getElementById('inPrecoAtual').value = t.precoAtual;
+    document.getElementById('inDataCompra').value = t.dataCompra;
+    document.getElementById('formTitleInvest').innerText = "✏️ EDITANDO INVESTIMENTO";
+    document.getElementById('btnSaveInvest').innerText = "🔄 ATUALIZAR";
+    document.getElementById('btnCancelEditInvest').classList.remove('hidden');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('✏️ Modo edição ativado', 'info');
+}
+
+// --- PDF EXPORT (atualizado para incluir investimentos) ---
 function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+    if (activeTab === 'transacoes') {
+        exportarPDFTransacoes(doc);
+    } else {
+        exportarPDFInvestimentos(doc);
+    }
+}
+
+function exportarPDFTransacoes(doc) {
     const mes = document.getElementById('fMonth').value;
     const ano = document.getElementById('fYear').value;
     const mIdx = MESES.indexOf(mes);
@@ -681,7 +1004,7 @@ function exportarPDF() {
     
     doc.setFontSize(20);
     doc.setTextColor(0, 150, 100);
-    doc.text('Relatório Financeiro', 20, 20);
+    doc.text('Relatório de Transações', 20, 20);
     
     doc.setFontSize(12);
     doc.setTextColor(100);
@@ -719,7 +1042,60 @@ function exportarPDF() {
         headStyles: { fillColor: [59, 130, 246] }
     });
     
-    doc.save(`relatorio-${mes}-${ano}.pdf`);
+    doc.save(`transacoes-${mes}-${ano}.pdf`);
+    showToast('PDF gerado com sucesso!', 'success');
+}
+
+function exportarPDFInvestimentos(doc) {
+    const investimentos = dados.investimentos || [];
+    
+    const totalInvestido = investimentos.reduce((s, t) => s + t.valorTotal, 0);
+    const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
+    const totalLucro = totalAtual - totalInvestido;
+    const rentabilidadeTotal = totalInvestido > 0 ? (totalLucro / totalInvestido) * 100 : 0;
+    
+    doc.setFontSize(20);
+    doc.setTextColor(0, 150, 100);
+    doc.text('Relatório de Investimentos', 20, 20);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Resumo da Carteira', 20, 35);
+    
+    doc.autoTable({
+        startY: 40,
+        head: [['Descrição', 'Valor']],
+        body: [
+            ['Total Investido', `R$ ${totalInvestido.toFixed(2)}`],
+            ['Valor Atual', `R$ ${totalAtual.toFixed(2)}`],
+            ['Lucro/Prejuízo', `R$ ${totalLucro.toFixed(2)}`],
+            ['Rentabilidade', `${rentabilidadeTotal >= 0 ? '+' : ''}${rentabilidadeTotal.toFixed(2)}%`]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] }
+    });
+    
+    doc.text('Detalhamento', 20, doc.lastAutoTable.finalY + 15);
+    
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Ativo', 'Tipo', 'Corretora', 'Quant.', 'P.Médio', 'P.Atual', 'Total', 'Lucro', 'Rent.']],
+        body: investimentos.map(t => [
+            t.ativo,
+            t.tipo,
+            t.corretora,
+            t.quantidade.toString(),
+            `R$ ${t.precoMedio.toFixed(2)}`,
+            `R$ ${t.precoAtual.toFixed(2)}`,
+            `R$ ${t.valorAtual.toFixed(2)}`,
+            `R$ ${t.lucroPrejuizo.toFixed(2)}`,
+            `${t.rentabilidade >= 0 ? '+' : ''}${t.rentabilidade.toFixed(2)}%`
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246] }
+    });
+    
+    doc.save(`investimentos-${new Date().toISOString().split('T')[0]}.pdf`);
     showToast('PDF gerado com sucesso!', 'success');
 }
 
@@ -728,16 +1104,29 @@ function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
-            resetForm();
-            document.getElementById('inDesc').focus();
+            if (activeTab === 'transacoes') {
+                resetForm();
+                document.getElementById('inDesc').focus();
+            } else {
+                resetFormInvest();
+                document.getElementById('inAtivo').focus();
+            }
             showToast('Novo registro', 'info');
         }
         
         if (e.key === 'Escape') {
-            const editId = document.getElementById('editId').value;
-            if (editId) {
-                resetForm();
-                showToast('Edição cancelada', 'info');
+            if (activeTab === 'transacoes') {
+                const editId = document.getElementById('editId').value;
+                if (editId) {
+                    resetForm();
+                    showToast('Edição cancelada', 'info');
+                }
+            } else {
+                const editId = document.getElementById('editIdInvest').value;
+                if (editId) {
+                    resetFormInvest();
+                    showToast('Edição cancelada', 'info');
+                }
             }
         }
         
@@ -746,6 +1135,16 @@ function initKeyboardShortcuts() {
             if (currentUser) {
                 syncToCloud();
             }
+        }
+        
+        // Atalhos para abas: Alt+1 (Transações), Alt+2 (Investimentos)
+        if (e.altKey && e.key === '1') {
+            e.preventDefault();
+            mudarAba('transacoes');
+        }
+        if (e.altKey && e.key === '2') {
+            e.preventDefault();
+            mudarAba('investimentos');
         }
     });
 }
@@ -756,14 +1155,20 @@ window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.toggleDarkMode = toggleDarkMode;
 window.adicionar = adicionar;
+window.adicionarInvestimento = adicionarInvestimento;
 window.excluir = excluir;
+window.excluirInvestimento = excluirInvestimento;
 window.excluirTodasParcelas = excluirTodasParcelas;
 window.togglePago = togglePago;
 window.prepararEdicao = prepararEdicao;
+window.prepararEdicaoInvest = prepararEdicaoInvest;
 window.resetForm = resetForm;
+window.resetFormInvest = resetFormInvest;
 window.render = render;
 window.exportarPDF = exportarPDF;
 window.filtrarTabela = filtrarTabela;
 window.addItemLista = addItemLista;
 window.mostrarCadastro = mostrarCadastro;
 window.mostrarLogin = mostrarLogin;
+window.mudarAba = mudarAba;
+window.atualizarPrecoDialog = atualizarPrecoDialog;
