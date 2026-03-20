@@ -14,33 +14,59 @@
     <style>
         #authScreen { display: flex; }
         #appScreen { display: none; }
+        #cadastroForm { display: none; }
+        #loginForm { display: block; }
         .loading-btn { opacity: 0.6; pointer-events: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- Tela de Autenticação - CORRIGIDA -->
+    <!-- Tela de Autenticação -->
     <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+            
+            <!-- Logo -->
             <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 FINANCEIRO PRO</h1>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse sua conta</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest" id="authSubtitle">Acesse sua conta</p>
             
-            <!-- Input Email - CORRIGIDO -->
-            <input id="authEmail" type="email" placeholder="E-mail" value="teste@email.com"
-                   class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+            <!-- FORMULÁRIO DE LOGIN -->
+            <div id="loginForm">
+                <input id="authEmail" type="email" placeholder="E-mail" value="teste@email.com"
+                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+                
+                <input id="authPass" type="password" placeholder="Senha" value="123456"
+                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+                
+                <div class="flex gap-2">
+                    <button onclick="handleLogin()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">
+                        ENTRAR
+                    </button>
+                    <button onclick="mostrarCadastro()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">
+                        CADASTRAR
+                    </button>
+                </div>
+            </div>
             
-            <!-- Input Senha - CORRIGIDO -->
-            <input id="authPass" type="password" placeholder="Senha" value="123456"
-                   class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-            
-            <div class="flex gap-2">
-                <button onclick="handleLogin()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">
-                    ENTRAR
-                </button>
-                <button onclick="handleSignup()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">
-                    CADASTRAR
-                </button>
+            <!-- FORMULÁRIO DE CADASTRO (COM NOME) -->
+            <div id="cadastroForm">
+                <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
+                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+                
+                <input id="cadastroEmail" type="email" placeholder="E-mail" 
+                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+                
+                <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" 
+                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+                
+                <div class="flex gap-2">
+                    <button onclick="handleSignup()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">
+                        CRIAR CONTA
+                    </button>
+                    <button onclick="mostrarLogin()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">
+                        VOLTAR
+                    </button>
+                </div>
             </div>
             
             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-4">
@@ -190,7 +216,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -205,7 +231,16 @@
         const app = initializeApp(firebaseConfig);
         window.auth = getAuth(app);
         window.db = getFirestore(app);
-        window.fb_funcs = { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, doc, setDoc, getDoc };
+        window.fb_funcs = { 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            onAuthStateChanged, 
+            signOut, 
+            updateProfile,
+            doc, 
+            setDoc, 
+            getDoc 
+        };
     </script>
     <script src="app.js"></script>
 </body>
