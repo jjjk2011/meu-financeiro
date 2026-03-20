@@ -224,7 +224,7 @@ function adicionar() {
     }
 
     if (editId) {
-        // MODO EDIÇÃO - CORRIGIDO
+        // MODO EDIÇÃO
         const index = dados.transacoes.findIndex(t => String(t.id) === String(editId));
         if (index !== -1) {
             dados.transacoes[index] = {
@@ -294,10 +294,15 @@ function render() {
         );
     }
 
-    const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
-    const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
+    // Separa receitas e despesas
+    const receitas = filtrados.filter(t => t.tipo === 'income');
+    const despesas = filtrados.filter(t => t.tipo === 'expense');
+    
+    const inc = receitas.reduce((s, t) => s + t.valor, 0);
+    const exp = despesas.reduce((s, t) => s + t.valor, 0);
     const saldo = inc - exp;
 
+    // Atualiza saldo
     const saldoEl = document.getElementById('totalBalance');
     if (saldoEl) {
         saldoEl.innerText = saldo.toLocaleString('pt-BR', {
@@ -313,6 +318,7 @@ function render() {
         }`;
     }
 
+    // Atualiza cards
     const totalReceitasEl = document.getElementById('totalReceitas');
     const totalDespesasEl = document.getElementById('totalDespesas');
     
@@ -337,7 +343,7 @@ function render() {
         contadorEl.innerText = filtrados.length;
     }
 
-    // TABELA - CORRIGIDA com escapes corretos para as strings
+    // TABELA COM RECEITAS E DESPESAS SEPARADAS
     const tableBody = document.getElementById('tableBody');
     if (!tableBody) return;
 
@@ -351,40 +357,93 @@ function render() {
             </tr>`;
     } else {
         let html = '';
-        filtrados.forEach(t => {
-            // Escapa aspas simples no ID e descrição
-            const idSeguro = String(t.id).replace(/'/g, "\\'");
-            const descSegura = t.desc.replace(/'/g, "\\'");
-            
+        
+        // RECEITAS
+        if (receitas.length > 0) {
             html += `
-            <tr class="${t.pago ? 'opacity-30' : ''} border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td class="py-4 px-2 w-8">
-                    <button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 transition-all transform hover:scale-110 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 hover:border-emerald-500'}"></button>
-                </td>
-                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')">
-                    <div class="font-bold text-sm dark:text-slate-200">
-                        ${descSegura} 
-                        ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}
-                    </div>
-                    <div class="text-[8px] text-blue-500 font-bold uppercase flex gap-2">
-                        <span>${t.metodo}</span>
-                        <span>•</span>
-                        <span>${t.categoria}</span>
-                    </div>
-                </td>
-                <td class="text-right font-black ${t.tipo === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
-                    ${t.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
-                </td>
-                <td class="text-right px-2">
-                    <button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
-                        ✕
-                    </button>
+            <tr class="bg-emerald-50 dark:bg-emerald-900/20">
+                <td colspan="4" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                    💰 RECEITAS
                 </td>
             </tr>`;
-        });
+            
+            receitas.forEach(t => {
+                const idSeguro = String(t.id).replace(/'/g, "\\'");
+                const descSegura = t.desc.replace(/'/g, "\\'");
+                
+                html += `
+                <tr class="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="py-4 px-2 w-8">
+                        <button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 transition-all transform hover:scale-110 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 hover:border-emerald-500'}"></button>
+                    </td>
+                    <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')">
+                        <div class="font-bold text-sm dark:text-slate-200">
+                            ${descSegura} 
+                            ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}
+                        </div>
+                        <div class="text-[8px] text-emerald-600 font-bold uppercase flex gap-2">
+                            <span>${t.metodo}</span>
+                            <span>•</span>
+                            <span>${t.categoria}</span>
+                        </div>
+                    </td>
+                    <td class="text-right font-black text-emerald-500">
+                        ${t.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                    </td>
+                    <td class="text-right px-2">
+                        <button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
+                            ✕
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        }
+        
+        // DESPESAS
+        if (despesas.length > 0) {
+            html += `
+            <tr class="bg-rose-50 dark:bg-rose-900/20">
+                <td colspan="4" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
+                    📉 DESPESAS
+                </td>
+            </tr>`;
+            
+            despesas.forEach(t => {
+                const idSeguro = String(t.id).replace(/'/g, "\\'");
+                const descSegura = t.desc.replace(/'/g, "\\'");
+                
+                html += `
+                <tr class="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="py-4 px-2 w-8">
+                        <button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 transition-all transform hover:scale-110 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 hover:border-emerald-500'}"></button>
+                    </td>
+                    <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')">
+                        <div class="font-bold text-sm dark:text-slate-200">
+                            ${descSegura} 
+                            ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}
+                        </div>
+                        <div class="text-[8px] text-rose-500 font-bold uppercase flex gap-2">
+                            <span>${t.metodo}</span>
+                            <span>•</span>
+                            <span>${t.categoria}</span>
+                        </div>
+                    </td>
+                    <td class="text-right font-black text-rose-500">
+                        ${t.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                    </td>
+                    <td class="text-right px-2">
+                        <button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
+                            ✕
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        }
+        
         tableBody.innerHTML = html;
     }
 
+    // Atualiza selects
     const updateSelect = (id, list) => {
         const el = document.getElementById(id);
         if (el) {
@@ -397,10 +456,9 @@ function render() {
     updateSelect('inMeth', dados.metodos);
 }
 
-// --- CRUD OPERATIONS - CORRIGIDAS ---
+// --- CRUD OPERATIONS ---
 function excluir(id) {
     if (confirm("Tem certeza que deseja excluir este registro?")) { 
-        // Converte para string para garantir comparação
         dados.transacoes = dados.transacoes.filter(t => String(t.id) !== String(id)); 
         syncToCloud();
         showToast('Registro excluído', 'success');
@@ -408,15 +466,11 @@ function excluir(id) {
 }
 
 function togglePago(id) {
-    // Converte para string para garantir comparação
     const t = dados.transacoes.find(x => String(x.id) === String(id));
     if (t) { 
         t.pago = !t.pago; 
         syncToCloud();
         showToast(t.pago ? '✅ Marcado como pago' : '⏳ Marcado como pendente', 'info');
-    } else {
-        console.log('Transação não encontrada:', id);
-        showToast('Erro ao alterar status', 'error');
     }
 }
 
@@ -461,10 +515,8 @@ function resetForm() {
 }
 
 function prepararEdicao(id) {
-    // Converte para string para garantir comparação
     const t = dados.transacoes.find(x => String(x.id) === String(id));
     if (!t) {
-        console.log('Transação não encontrada para edição:', id);
         showToast('Erro ao carregar registro', 'error');
         return;
     }
