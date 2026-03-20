@@ -63,14 +63,10 @@ window.addEventListener('load', () => {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
             
-            // Mostra o nome do usuário se existir, senão mostra o email
-            const nomeExibido = user.displayName || user.email.split('@')[0];
-            document.getElementById('userDisplay').innerHTML = `
-                <span class="text-emerald-400">👤 ${nomeExibido}</span>
-                <span class="ml-2 text-[8px] opacity-50">● ONLINE</span>
-            `;
+            // Busca o nome do Firestore primeiro, se não tiver, usa o displayName ou email
+            carregarNomeUsuario(user);
+            
             loadFromCloud();
-            showToast(`Bem-vindo, ${nomeExibido}!`, 'success');
         } else {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('appScreen').style.display = 'none';
@@ -80,6 +76,52 @@ window.addEventListener('load', () => {
     initDateFilters();
     initKeyboardShortcuts();
 });
+
+// --- CARREGAR NOME DO USUÁRIO ---
+async function carregarNomeUsuario(user) {
+    try {
+        // Tenta buscar do Firestore primeiro
+        const docRef = window.fb_funcs.doc(window.db, "users", user.uid);
+        const snap = await window.fb_funcs.getDoc(docRef);
+        
+        let nomeExibido = '';
+        
+        if (snap.exists() && snap.data().nome) {
+            // Se tem nome no Firestore, usa ele
+            nomeExibido = snap.data().nome;
+        } else if (user.displayName) {
+            // Se não, usa o displayName do Auth
+            nomeExibido = user.displayName;
+        } else {
+            // Se não, usa o email
+            nomeExibido = user.email.split('@')[0];
+        }
+        
+        // Atualiza o displayName no Auth se não existir
+        if (!user.displayName && nomeExibido) {
+            await window.fb_funcs.updateProfile(user, {
+                displayName: nomeExibido
+            });
+        }
+        
+        // Mostra o nome no header
+        document.getElementById('userDisplay').innerHTML = `
+            <span class="text-emerald-400">👤 ${nomeExibido}</span>
+            <span class="ml-2 text-[8px] opacity-50">● ONLINE</span>
+        `;
+        
+        showToast(`Bem-vindo, ${nomeExibido}!`, 'success');
+        
+    } catch (err) {
+        console.error("Erro ao carregar nome:", err);
+        // Fallback para email
+        const nomeFallback = user.email.split('@')[0];
+        document.getElementById('userDisplay').innerHTML = `
+            <span class="text-emerald-400">👤 ${nomeFallback}</span>
+            <span class="ml-2 text-[8px] opacity-50">● ONLINE</span>
+        `;
+    }
+}
 
 async function handleLogin() {
     const e = document.getElementById('authEmail').value.trim();
