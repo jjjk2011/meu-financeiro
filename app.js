@@ -301,15 +301,37 @@ function render() {
     filtrados.sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
 
     // Saldo
-    const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
-    const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
-    const saldo = inc - exp;
-    
-    const saldoEl = document.getElementById('totalBalance');
-    saldoEl.innerText = saldo.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    saldoEl.className = `text-3xl font-black tracking-tighter ${
-        saldo > 0 ? 'text-emerald-500' : saldo < 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'
-    }`;
+const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
+const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
+const saldo = inc - exp;
+
+// Atualiza saldo principal com formatação correta
+const saldoEl = document.getElementById('totalBalance');
+saldoEl.innerText = saldo.toLocaleString('pt-BR', {
+    style: 'currency', 
+    currency: 'BRL',
+    minimumFractionDigits: 2
+});
+
+// Atualiza cores do saldo
+saldoEl.className = `text-4xl font-black tracking-tighter ${
+    saldo > 0 ? 'text-emerald-500' : 
+    saldo < 0 ? 'text-rose-500' : 
+    'text-slate-900 dark:text-white'
+}`;
+
+// Atualiza cards de receitas e despesas
+document.getElementById('totalReceitas').innerText = inc.toLocaleString('pt-BR', {
+    style: 'currency', 
+    currency: 'BRL',
+    minimumFractionDigits: 2
+});
+
+document.getElementById('totalDespesas').innerText = exp.toLocaleString('pt-BR', {
+    style: 'currency', 
+    currency: 'BRL',
+    minimumFractionDigits: 2
+});
 
     // Tabela
     if (filtrados.length === 0) {
