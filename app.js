@@ -1,6 +1,6 @@
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let currentUser = null;
-let dados = { transacoes: [], categorias: ['ALIMENTAÇÃO', 'CONTAS', 'SAÚDE', 'LAZER'], metodos: ['DINHEIRO', 'CRÉDITO', 'DÉBITO', 'PIX'] };
+let dados = { transacoes: [], categorias: ['ALIMENTAÇÃO', 'CONTAS', 'SAÚDE', 'LAZER'], metodos: ['DINHEIRO', 'CRÉDITO', 'DÉBITO', 'PIX','Banco do Brasil'] };
 
 // --- TEMA ---
 function toggleDarkMode() {
