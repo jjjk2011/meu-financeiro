@@ -301,41 +301,59 @@ function render() {
     filtrados.sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
 
     // Saldo
-const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
-const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
-const saldo = inc - exp;
+    const inc = filtrados.filter(t => t.tipo === 'income').reduce((s, t) => s + t.valor, 0);
+    const exp = filtrados.filter(t => t.tipo === 'expense').reduce((s, t) => s + t.valor, 0);
+    const saldo = inc - exp;
 
-// Atualiza saldo principal com formatação correta
-const saldoEl = document.getElementById('totalBalance');
-saldoEl.innerText = saldo.toLocaleString('pt-BR', {
-    style: 'currency', 
-    currency: 'BRL',
-    minimumFractionDigits: 2
-});
+    // Atualiza saldo principal com formatação correta
+    const saldoEl = document.getElementById('totalBalance');
+    if (saldoEl) {
+        saldoEl.innerText = saldo.toLocaleString('pt-BR', {
+            style: 'currency', 
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        });
 
-// Atualiza cores do saldo
-saldoEl.className = `text-4xl font-black tracking-tighter ${
-    saldo > 0 ? 'text-emerald-500' : 
-    saldo < 0 ? 'text-rose-500' : 
-    'text-slate-900 dark:text-white'
-}`;
+        // Atualiza cores do saldo
+        saldoEl.className = `text-4xl font-black tracking-tighter ${
+            saldo > 0 ? 'text-emerald-500' : 
+            saldo < 0 ? 'text-rose-500' : 
+            'text-slate-900 dark:text-white'
+        }`;
+    }
 
-// Atualiza cards de receitas e despesas
-document.getElementById('totalReceitas').innerText = inc.toLocaleString('pt-BR', {
-    style: 'currency', 
-    currency: 'BRL',
-    minimumFractionDigits: 2
-});
+    // Atualiza cards de receitas e despesas
+    const totalReceitasEl = document.getElementById('totalReceitas');
+    const totalDespesasEl = document.getElementById('totalDespesas');
+    
+    if (totalReceitasEl) {
+        totalReceitasEl.innerText = inc.toLocaleString('pt-BR', {
+            style: 'currency', 
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        });
+    }
+    
+    if (totalDespesasEl) {
+        totalDespesasEl.innerText = exp.toLocaleString('pt-BR', {
+            style: 'currency', 
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        });
+    }
 
-document.getElementById('totalDespesas').innerText = exp.toLocaleString('pt-BR', {
-    style: 'currency', 
-    currency: 'BRL',
-    minimumFractionDigits: 2
-});
+    // Atualiza contador de registros
+    const contadorEl = document.getElementById('contadorRegistros');
+    if (contadorEl) {
+        contadorEl.innerText = filtrados.length;
+    }
 
     // Tabela
+    const tableBody = document.getElementById('tableBody');
+    if (!tableBody) return;
+
     if (filtrados.length === 0) {
-        document.getElementById('tableBody').innerHTML = `
+        tableBody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center py-12 opacity-50">
                     <span class="text-4xl block mb-2">📭</span>
@@ -343,7 +361,7 @@ document.getElementById('totalDespesas').innerText = exp.toLocaleString('pt-BR',
                 </td>
             </tr>`;
     } else {
-        document.getElementById('tableBody').innerHTML = filtrados.map(t => `
+        tableBody.innerHTML = filtrados.map(t => `
             <tr class="${t.pago ? 'opacity-30' : ''} border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <td class="py-4 px-2 w-8">
                     <button onclick="togglePago('${t.id}')" class="w-5 h-5 rounded-full border-2 transition-all transform hover:scale-110 ${
@@ -375,9 +393,11 @@ document.getElementById('totalDespesas').innerText = exp.toLocaleString('pt-BR',
     // Atualiza selects
     const updateSelect = (id, list) => {
         const el = document.getElementById(id);
-        const valorAtual = el.value;
-        el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
-        if(list.includes(valorAtual)) el.value = valorAtual;
+        if (el) {
+            const valorAtual = el.value;
+            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+            if(list.includes(valorAtual)) el.value = valorAtual;
+        }
     };
     updateSelect('inCat', dados.categorias);
     updateSelect('inMeth', dados.metodos);
@@ -406,11 +426,17 @@ function initDateFilters() {
     const now = new Date();
     ['inMonth', 'fMonth'].forEach(id => {
         const el = document.getElementById(id);
-        el.innerHTML = '';
-        MESES.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
-        el.value = MESES[now.getMonth()];
+        if (el) {
+            el.innerHTML = '';
+            MESES.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
+            el.value = MESES[now.getMonth()];
+        }
     });
-    document.getElementById('fYear').value = document.getElementById('inYear').value = now.getFullYear();
+    
+    const fYearEl = document.getElementById('fYear');
+    const inYearEl = document.getElementById('inYear');
+    if (fYearEl) fYearEl.value = now.getFullYear();
+    if (inYearEl) inYearEl.value = now.getFullYear();
 }
 
 function filtrarTabela(texto) {
@@ -425,8 +451,8 @@ function resetForm() {
     document.getElementById('inVal').value = '';
     document.getElementById('inParc').value = '';
     document.getElementById('inParc').disabled = false;
-    document.getElementById('formTitle').innerText = "Novo Registro";
-    document.getElementById('btnSave').innerText = "SALVAR NA NUVEM";
+    document.getElementById('formTitle').innerText = "➕ NOVO REGISTRO";
+    document.getElementById('btnSave').innerText = "💾 SALVAR NA NUVEM";
     document.getElementById('btnCancelEdit').classList.add('hidden');
     
     // Reseta para valores padrão
@@ -450,8 +476,8 @@ function prepararEdicao(id) {
     document.getElementById('inMeth').value = t.metodo;
     document.getElementById('inMonth').value = MESES[t.mesIdx];
     document.getElementById('inYear').value = t.ano;
-    document.getElementById('formTitle').innerText = "Editando Registro";
-    document.getElementById('btnSave').innerText = "ATUALIZAR";
+    document.getElementById('formTitle').innerText = "✏️ EDITANDO REGISTRO";
+    document.getElementById('btnSave').innerText = "🔄 ATUALIZAR";
     document.getElementById('btnCancelEdit').classList.remove('hidden');
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
