@@ -20,17 +20,32 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- Tela de Autenticação -->
-    <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
-            <h1 class="font-black text-2xl text-slate-800 mb-2 uppercase italic">💰 Financeiro Pro</h1>
-            <p class="text-[10px] text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse sua conta</p>
-            <input id="authEmail" type="email" placeholder="E-mail" class="w-full p-3 bg-slate-50 border rounded-2xl mb-3 outline-none text-sm">
-            <input id="authPass" type="password" placeholder="Senha" class="w-full p-3 bg-slate-50 border rounded-2xl mb-4 outline-none text-sm">
+    <!-- Tela de Autenticação - CORRIGIDA -->
+    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+            <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 FINANCEIRO PRO</h1>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest">Acesse sua conta</p>
+            
+            <!-- Input Email - CORRIGIDO -->
+            <input id="authEmail" type="email" placeholder="E-mail" value="teste@email.com"
+                   class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+            
+            <!-- Input Senha - CORRIGIDO -->
+            <input id="authPass" type="password" placeholder="Senha" value="123456"
+                   class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
+            
             <div class="flex gap-2">
-                <button onclick="handleLogin()" class="flex-grow bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition text-xs uppercase">Entrar</button>
-                <button onclick="handleSignup()" class="flex-grow bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition text-xs uppercase">Cadastrar</button>
+                <button onclick="handleLogin()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">
+                    ENTRAR
+                </button>
+                <button onclick="handleSignup()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">
+                    CADASTRAR
+                </button>
             </div>
+            
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-4">
+                Use qualquer e-mail/senha para teste
+            </p>
         </div>
     </div>
 
@@ -38,7 +53,7 @@
     <div id="appScreen" class="p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
             
-            <!-- Header Corrigido -->
+            <!-- Header -->
             <div class="bg-slate-800 dark:bg-slate-900 text-white p-4 md:p-6 mb-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
                 <div class="flex items-center gap-3">
                     <div>
@@ -64,49 +79,49 @@
                         <div class="space-y-3">
                             <input type="hidden" id="editId">
                             
-                            <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none">
+                            <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white">
                                 <option value="income">💰 Receita (+)</option>
                                 <option value="expense" selected>📉 Despesa (-)</option>
                             </select>
                             
                             <input id="inDesc" type="text" placeholder="Descrição" 
-                                   class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none">
+                                   class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
                             
                             <div class="grid grid-cols-2 gap-2">
                                 <input id="inVal" type="number" placeholder="Valor" step="0.01"
-                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none">
+                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
                                 <input id="inParc" type="number" placeholder="Parc." min="1" max="24"
-                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none">
+                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
                             </div>
                             
                             <div class="grid grid-cols-2 gap-2">
-                                <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs"></select>
-                                <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs"></select>
+                                <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
                             </div>
                             
-                            <!-- Campos para nova categoria/método CORRIGIDOS -->
+                            <!-- Campos para nova categoria/método -->
                             <div class="grid grid-cols-2 gap-2 pt-2">
                                 <div>
                                     <input id="newCat" type="text" placeholder="Nova categoria" 
-                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border rounded-xl mb-1">
+                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
                                     <button onclick="addItemLista('categorias', 'newCat')" 
-                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 py-1 rounded-lg hover:bg-slate-300 transition">
+                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                                         + Adicionar
                                     </button>
                                 </div>
                                 <div>
                                     <input id="newMeth" type="text" placeholder="Novo método" 
-                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border rounded-xl mb-1">
+                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
                                     <button onclick="addItemLista('metodos', 'newMeth')" 
-                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 py-1 rounded-lg hover:bg-slate-300 transition">
+                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                                         + Adicionar
                                     </button>
                                 </div>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-2">
-                                <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs"></select>
-                                <input id="inYear" type="number" value="2026" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs">
+                                <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                <input id="inYear" type="number" value="2026" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white">
                             </div>
                             
                             <button onclick="adicionar()" id="btnSave" 
@@ -115,20 +130,19 @@
                             </button>
                             
                             <button id="btnCancelEdit" onclick="resetForm()" 
-                                    class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold py-2 rounded-xl text-[9px] uppercase hover:bg-slate-300 transition">
+                                    class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                                 ← Cancelar Edição
                             </button>
                         </div>
                     </div>
 
-                    <!-- Card de Saldo CORRIGIDO -->
+                    <!-- Card de Saldo -->
                     <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
                         <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">SALDO DO PERÍODO</p>
                         <h2 id="totalBalance" class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
                             R$ 0,00
                         </h2>
                         
-                        <!-- Cards de Receitas/Despesas CORRIGIDOS -->
                         <div class="grid grid-cols-2 gap-3 mt-4">
                             <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl">
                                 <p class="text-[8px] uppercase text-slate-400">Receitas</p>
@@ -152,10 +166,10 @@
                         
                         <div class="flex flex-wrap gap-2 w-full md:w-auto">
                             <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)"
-                                   class="flex-1 md:flex-none p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800">
+                                   class="flex-1 md:flex-none p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400">
                             
-                            <select id="fMonth" onchange="render()" class="p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800"></select>
-                            <input id="fYear" type="number" onchange="render()" value="2026" class="p-2 border dark:border-slate-700 rounded-xl text-xs w-20 bg-slate-50 dark:bg-slate-800">
+                            <select id="fMonth" onchange="render()" class="p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"></select>
+                            <input id="fYear" type="number" onchange="render()" value="2026" class="p-2 border dark:border-slate-700 rounded-xl text-xs w-20 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                         </div>
                     </div>
                     
