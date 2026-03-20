@@ -26,7 +26,6 @@
     <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
             
-            <!-- Logo -->
             <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 FINANCEIRO PRO</h1>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest" id="authSubtitle">Acesse sua conta</p>
             
@@ -48,7 +47,7 @@
                 </div>
             </div>
             
-            <!-- FORMULÁRIO DE CADASTRO (COM NOME) -->
+            <!-- FORMULÁRIO DE CADASTRO -->
             <div id="cadastroForm">
                 <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
                        class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
@@ -77,7 +76,7 @@
 
     <!-- App Principal -->
     <div id="appScreen" class="p-4 md:p-8">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w-7xl mx-auto">
             
             <!-- Header -->
             <div class="bg-slate-800 dark:bg-slate-900 text-white p-4 md:p-6 mb-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
@@ -97,112 +96,246 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Formulário -->
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                        <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">➕ NOVO REGISTRO</h3>
-                        <div class="space-y-3">
-                            <input type="hidden" id="editId">
-                            
-                            <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white">
-                                <option value="income">💰 Receita (+)</option>
-                                <option value="expense" selected>📉 Despesa (-)</option>
-                            </select>
-                            
-                            <input id="inDesc" type="text" placeholder="Descrição" 
-                                   class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
-                            
-                            <div class="grid grid-cols-2 gap-2">
-                                <input id="inVal" type="number" placeholder="Valor" step="0.01"
-                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
-                                <input id="inParc" type="number" placeholder="Parc." min="1" max="24"
-                                       class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-2">
-                                <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
-                                <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
-                            </div>
-                            
-                            <!-- Campos para nova categoria/método -->
-                            <div class="grid grid-cols-2 gap-2 pt-2">
-                                <div>
-                                    <input id="newCat" type="text" placeholder="Nova categoria" 
-                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
-                                    <button onclick="addItemLista('categorias', 'newCat')" 
-                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
-                                        + Adicionar
-                                    </button>
+            <!-- Abas de Navegação -->
+            <div class="flex gap-2 mb-6">
+                <button id="tabTransacoes" onclick="mudarAba('transacoes')" 
+                        class="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                    💰 TRANSAÇÕES
+                </button>
+                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" 
+                        class="flex-1 md:flex-none px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-2">
+                    📈 INVESTIMENTOS
+                </button>
+            </div>
+
+            <!-- ÁREA DE TRANSAÇÕES -->
+            <div id="areaTransacoes">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Formulário de Transações -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+                            <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">➕ NOVO REGISTRO</h3>
+                            <div class="space-y-3">
+                                <input type="hidden" id="editId">
+                                
+                                <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white">
+                                    <option value="income">💰 Receita (+)</option>
+                                    <option value="expense" selected>📉 Despesa (-)</option>
+                                </select>
+                                
+                                <input id="inDesc" type="text" placeholder="Descrição" 
+                                       class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="inVal" type="number" placeholder="Valor" step="0.01"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                    <input id="inParc" type="number" placeholder="Parc." min="1" max="24"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
                                 </div>
-                                <div>
-                                    <input id="newMeth" type="text" placeholder="Novo método" 
-                                           class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
-                                    <button onclick="addItemLista('metodos', 'newMeth')" 
-                                            class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
-                                        + Adicionar
-                                    </button>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                    <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2 pt-2">
+                                    <div>
+                                        <input id="newCat" type="text" placeholder="Nova categoria" 
+                                               class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
+                                        <button onclick="addItemLista('categorias', 'newCat')" 
+                                                class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                            + Adicionar
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <input id="newMeth" type="text" placeholder="Novo método" 
+                                               class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
+                                        <button onclick="addItemLista('metodos', 'newMeth')" 
+                                                class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                            + Adicionar
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                    <input id="inYear" type="number" value="2026" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white">
+                                </div>
+                                
+                                <button onclick="adicionar()" id="btnSave" 
+                                        class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">
+                                    💾 SALVAR NA NUVEM
+                                </button>
+                                
+                                <button id="btnCancelEdit" onclick="resetForm()" 
+                                        class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                    ← Cancelar Edição
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card de Saldo -->
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
+                            <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">SALDO DO PERÍODO</p>
+                            <h2 id="totalBalance" class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                R$ 0,00
+                            </h2>
+                            
+                            <div class="grid grid-cols-2 gap-3 mt-4">
+                                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl">
+                                    <p class="text-[8px] uppercase text-slate-400">Receitas</p>
+                                    <p id="totalReceitas" class="text-emerald-600 dark:text-emerald-400 font-bold text-sm">R$ 0,00</p>
+                                </div>
+                                <div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl">
+                                    <p class="text-[8px] uppercase text-slate-400">Despesas</p>
+                                    <p id="totalDespesas" class="text-rose-600 dark:text-rose-400 font-bold text-sm">R$ 0,00</p>
                                 </div>
                             </div>
-                            
-                            <div class="grid grid-cols-2 gap-2">
-                                <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
-                                <input id="inYear" type="number" value="2026" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white">
-                            </div>
-                            
-                            <button onclick="adicionar()" id="btnSave" 
-                                    class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">
-                                💾 SALVAR NA NUVEM
-                            </button>
-                            
-                            <button id="btnCancelEdit" onclick="resetForm()" 
-                                    class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">
-                                ← Cancelar Edição
-                            </button>
                         </div>
                     </div>
 
-                    <!-- Card de Saldo -->
-                    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
-                        <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">SALDO DO PERÍODO</p>
-                        <h2 id="totalBalance" class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">
-                            R$ 0,00
-                        </h2>
+                    <!-- Tabela de Transações -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b dark:border-slate-800 pb-4">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                📋 HISTÓRICO
+                                <span id="contadorRegistros" class="text-[8px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">0</span>
+                            </h3>
+                            
+                            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                                <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)"
+                                       class="flex-1 md:flex-none p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400">
+                                
+                                <select id="fMonth" onchange="render()" class="p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"></select>
+                                <input id="fYear" type="number" onchange="render()" value="2026" class="p-2 border dark:border-slate-700 rounded-xl text-xs w-20 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                            </div>
+                        </div>
                         
-                        <div class="grid grid-cols-2 gap-3 mt-4">
-                            <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl">
-                                <p class="text-[8px] uppercase text-slate-400">Receitas</p>
-                                <p id="totalReceitas" class="text-emerald-600 dark:text-emerald-400 font-bold text-sm">R$ 0,00</p>
-                            </div>
-                            <div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl">
-                                <p class="text-[8px] uppercase text-slate-400">Despesas</p>
-                                <p id="totalDespesas" class="text-rose-600 dark:text-rose-400 font-bold text-sm">R$ 0,00</p>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Tabela -->
-                <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b dark:border-slate-800 pb-4">
-                        <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                            📋 HISTÓRICO
-                            <span id="contadorRegistros" class="text-[8px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">0</span>
-                        </h3>
-                        
-                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)"
-                                   class="flex-1 md:flex-none p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400">
+            <!-- ÁREA DE INVESTIMENTOS -->
+            <div id="areaInvestimentos" style="display: none;">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Formulário de Investimentos -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+                            <h3 id="formTitleInvest" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">💰 NOVO INVESTIMENTO</h3>
+                            <div class="space-y-3">
+                                <input type="hidden" id="editIdInvest">
+                                
+                                <input id="inAtivo" type="text" placeholder="Ativo (ex: PETR4, BBDC4)" 
+                                       class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="inTipoInvest" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                    <select id="inCorretora" class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white"></select>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="inQuantidade" type="number" placeholder="Quantidade" step="0.01"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                    <input id="inPrecoMedio" type="number" placeholder="Preço médio" step="0.01"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="inPrecoAtual" type="number" placeholder="Preço atual (opcional)" step="0.01"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                                    <input id="inDataCompra" type="date"
+                                           class="p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm outline-none text-slate-900 dark:text-white">
+                                </div>
+                                
+                                <!-- Adicionar novo tipo/corretora -->
+                                <div class="grid grid-cols-2 gap-2 pt-2">
+                                    <div>
+                                        <input id="newTipoInvest" type="text" placeholder="Novo tipo" 
+                                               class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
+                                        <button onclick="addItemLista('tiposInvestimento', 'newTipoInvest')" 
+                                                class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                            + Tipo
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <input id="newCorretora" type="text" placeholder="Nova corretora" 
+                                               class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl mb-1 text-slate-900 dark:text-white placeholder-slate-400">
+                                        <button onclick="addItemLista('corretoras', 'newCorretora')" 
+                                                class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                            + Corretora
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="adicionarInvestimento()" id="btnSaveInvest" 
+                                        class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-black dark:hover:bg-emerald-500 transition text-[10px] uppercase tracking-widest shadow-lg">
+                                    💾 SALVAR INVESTIMENTO
+                                </button>
+                                
+                                <button id="btnCancelEditInvest" onclick="resetFormInvest()" 
+                                        class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                                    ← Cancelar Edição
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card de Resumo da Carteira -->
+                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+                            <h3 class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">📊 RESUMO DA CARTEIRA</h3>
                             
-                            <select id="fMonth" onchange="render()" class="p-2 border dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"></select>
-                            <input id="fYear" type="number" onchange="render()" value="2026" class="p-2 border dark:border-slate-700 rounded-xl text-xs w-20 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">Total Investido:</span>
+                                    <span id="totalInvestido" class="font-bold text-sm">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">Valor Atual:</span>
+                                    <span id="totalAtual" class="font-bold text-sm">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t dark:border-slate-700 pt-2">
+                                    <span class="text-xs text-slate-400">Lucro/Prejuízo:</span>
+                                    <span id="totalLucro" class="font-bold text-sm">R$ 0,00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">Rentabilidade:</span>
+                                    <span id="rentabilidadeTotal" class="font-bold text-sm">0,00%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                        </table>
+
+                    <!-- Tabela de Investimentos -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+                        <div class="flex justify-between items-center mb-6 border-b dark:border-slate-800 pb-4">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                📈 MINHA CARTEIRA
+                                <span id="contadorInvestimentos" class="text-[8px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">0</span>
+                            </h3>
+                            <span class="text-[8px] text-slate-400">Clique no ✏️ para atualizar preço</span>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="text-slate-400 border-b dark:border-slate-700">
+                                    <tr>
+                                        <th class="pb-2 font-medium">Ativo</th>
+                                        <th class="pb-2 font-medium">Corretora</th>
+                                        <th class="pb-2 font-medium text-right">Quant.</th>
+                                        <th class="pb-2 font-medium text-right">P.Médio</th>
+                                        <th class="pb-2 font-medium text-right">P.Atual</th>
+                                        <th class="pb-2 font-medium text-right">Lucro</th>
+                                        <th class="pb-2 font-medium text-right">Rent.</th>
+                                        <th class="pb-2 font-medium text-right"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="investTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
