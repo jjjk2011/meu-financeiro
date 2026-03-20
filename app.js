@@ -63,9 +63,7 @@ window.addEventListener('load', () => {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
             
-            // Busca o nome do Firestore primeiro, se não tiver, usa o displayName ou email
             carregarNomeUsuario(user);
-            
             loadFromCloud();
         } else {
             document.getElementById('authScreen').style.display = 'flex';
@@ -80,31 +78,25 @@ window.addEventListener('load', () => {
 // --- CARREGAR NOME DO USUÁRIO ---
 async function carregarNomeUsuario(user) {
     try {
-        // Tenta buscar do Firestore primeiro
         const docRef = window.fb_funcs.doc(window.db, "users", user.uid);
         const snap = await window.fb_funcs.getDoc(docRef);
         
         let nomeExibido = '';
         
         if (snap.exists() && snap.data().nome) {
-            // Se tem nome no Firestore, usa ele
             nomeExibido = snap.data().nome;
         } else if (user.displayName) {
-            // Se não, usa o displayName do Auth
             nomeExibido = user.displayName;
         } else {
-            // Se não, usa o email
             nomeExibido = user.email.split('@')[0];
         }
         
-        // Atualiza o displayName no Auth se não existir
         if (!user.displayName && nomeExibido) {
             await window.fb_funcs.updateProfile(user, {
                 displayName: nomeExibido
             });
         }
         
-        // Mostra o nome no header
         document.getElementById('userDisplay').innerHTML = `
             <span class="text-emerald-400">👤 ${nomeExibido}</span>
             <span class="ml-2 text-[8px] opacity-50">● ONLINE</span>
@@ -114,7 +106,6 @@ async function carregarNomeUsuario(user) {
         
     } catch (err) {
         console.error("Erro ao carregar nome:", err);
-        // Fallback para email
         const nomeFallback = user.email.split('@')[0];
         document.getElementById('userDisplay').innerHTML = `
             <span class="text-emerald-400">👤 ${nomeFallback}</span>
@@ -161,16 +152,13 @@ async function handleSignup() {
     }
     
     try {
-        // Cria o usuário
         const userCredential = await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
         const user = userCredential.user;
         
-        // Atualiza o perfil com o nome
         await window.fb_funcs.updateProfile(user, {
             displayName: nome
         });
         
-        // Cria o documento no Firestore com o nome
         const docRef = window.fb_funcs.doc(window.db, "users", user.uid);
         await window.fb_funcs.setDoc(docRef, {
             ...dados,
@@ -182,7 +170,6 @@ async function handleSignup() {
         showToast('Cadastro realizado com sucesso!', 'success');
         mostrarLogin();
         
-        // Limpa os campos
         document.getElementById('cadastroNome').value = '';
         document.getElementById('cadastroEmail').value = '';
         document.getElementById('cadastroPass').value = '';
@@ -352,6 +339,9 @@ function adicionar() {
                 categoria: categoria,
                 metodo: metodo,
                 parc: parc > 1 ? `${i + 1}/${parc}` : '',
+                parcTotal: parc > 1 ? parc : null, // Para identificar grupo de parcelas
+                parcAtual: parc > 1 ? i + 1 : null,
+                descOriginal: parc > 1 ? desc : null, // Descrição original do grupo
                 mesIdx: curIdx % 12,
                 ano: anoBase + Math.floor(curIdx / 12),
                 pago: false,
@@ -366,6 +356,27 @@ function adicionar() {
         showToast(`${parc} registro(s) adicionado(s)`, 'success');
         syncToCloud();
     }
+}
+
+// --- EXCLUIR TODAS AS PARCELAS ---
+function excluirTodasParcelas(descOriginal, parcTotal) {
+    const transacoesParaExcluir = dados.transacoes.filter(t => 
+        t.descOriginal === descOriginal && t.parcTotal === parcTotal
+    );
+    
+    if (transacoesParaExcluir.length === 0) return false;
+    
+    const mensagem = `Deseja excluir TODAS as ${transacoesParaExcluir.length} parcelas?`;
+    
+    if (confirm(mensagem)) {
+        dados.transacoes = dados.transacoes.filter(t => 
+            !(t.descOriginal === descOriginal && t.parcTotal === parcTotal)
+        );
+        syncToCloud();
+        showToast(`${transacoesParaExcluir.length} parcelas excluídas`, 'success');
+        return true;
+    }
+    return false;
 }
 
 // --- RENDER ---
@@ -440,19 +451,20 @@ function render() {
     if (filtrados.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="4" class="text-center py-12 opacity-50">
+                <td colspan="5" class="text-center py-12 opacity-50">
                     <span class="text-4xl block mb-2">📭</span>
                     Nenhuma transação encontrada
                 </td>
             </tr>`;
     } else {
         let html = '';
+        let gruposParcelas = {}; // Para evitar botões duplicados
         
         // RECEITAS
         if (receitas.length > 0) {
             html += `
             <tr class="bg-emerald-50 dark:bg-emerald-900/20">
-                <td colspan="4" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                <td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
                     💰 RECEITAS
                 </td>
             </tr>`;
@@ -460,6 +472,7 @@ function render() {
             receitas.forEach(t => {
                 const idSeguro = String(t.id).replace(/'/g, "\\'");
                 const descSegura = t.desc.replace(/'/g, "\\'");
+                const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
                 
                 html += `
                 <tr class="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -481,11 +494,20 @@ function render() {
                         ${t.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
                     </td>
                     <td class="text-right px-2">
+                        ${chaveGrupo && !gruposParcelas[chaveGrupo] ? 
+                            `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" 
+                                    class="text-slate-300 hover:text-amber-500 hover:scale-110 transition-all text-xs font-bold mr-2" 
+                                    title="Excluir todas as parcelas">
+                                📦
+                             </button>` 
+                            : ''}
                         <button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
                             ✕
                         </button>
                     </td>
                 </tr>`;
+                
+                if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
             });
         }
         
@@ -493,14 +515,17 @@ function render() {
         if (despesas.length > 0) {
             html += `
             <tr class="bg-rose-50 dark:bg-rose-900/20">
-                <td colspan="4" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
+                <td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
                     📉 DESPESAS
                 </td>
             </tr>`;
             
+            gruposParcelas = {}; // Reset para despesas
+            
             despesas.forEach(t => {
                 const idSeguro = String(t.id).replace(/'/g, "\\'");
                 const descSegura = t.desc.replace(/'/g, "\\'");
+                const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
                 
                 html += `
                 <tr class="border-b dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -522,11 +547,20 @@ function render() {
                         ${t.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
                     </td>
                     <td class="text-right px-2">
+                        ${chaveGrupo && !gruposParcelas[chaveGrupo] ? 
+                            `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" 
+                                    class="text-slate-300 hover:text-amber-500 hover:scale-110 transition-all text-xs font-bold mr-2" 
+                                    title="Excluir todas as parcelas">
+                                📦
+                             </button>` 
+                            : ''}
                         <button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500 hover:scale-110 transition-all text-xs font-bold">
                             ✕
                         </button>
                     </td>
                 </tr>`;
+                
+                if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
             });
         }
         
@@ -675,7 +709,7 @@ function exportarPDF() {
         startY: doc.lastAutoTable.finalY + 20,
         head: [['Descrição', 'Categoria', 'Método', 'Valor', 'Status']],
         body: transacoes.map(t => [
-            t.desc,
+            t.desc + (t.parc ? ` (${t.parc})` : ''),
             t.categoria,
             t.metodo,
             `R$ ${t.valor.toFixed(2)}`,
@@ -723,6 +757,7 @@ window.handleLogout = handleLogout;
 window.toggleDarkMode = toggleDarkMode;
 window.adicionar = adicionar;
 window.excluir = excluir;
+window.excluirTodasParcelas = excluirTodasParcelas;
 window.togglePago = togglePago;
 window.prepararEdicao = prepararEdicao;
 window.resetForm = resetForm;
