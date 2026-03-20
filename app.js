@@ -42,6 +42,19 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// --- CONTROLE DE TELAS ---
+function mostrarCadastro() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('cadastroForm').style.display = 'block';
+    document.getElementById('authSubtitle').innerText = 'Crie sua conta';
+}
+
+function mostrarLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('cadastroForm').style.display = 'none';
+    document.getElementById('authSubtitle').innerText = 'Acesse sua conta';
+}
+
 // --- LOGIN ---
 window.addEventListener('load', () => {
     window.fb_funcs.onAuthStateChanged(window.auth, (user) => {
@@ -49,15 +62,19 @@ window.addEventListener('load', () => {
             currentUser = user;
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
+            
+            // Mostra o nome do usuário se existir, senão mostra o email
+            const nomeExibido = user.displayName || user.email.split('@')[0];
             document.getElementById('userDisplay').innerHTML = `
-                <span class="text-emerald-400">${user.email}</span>
+                <span class="text-emerald-400">👤 ${nomeExibido}</span>
                 <span class="ml-2 text-[8px] opacity-50">● ONLINE</span>
             `;
             loadFromCloud();
-            showToast(`Bem-vindo, ${user.email.split('@')[0]}!`, 'success');
+            showToast(`Bem-vindo, ${nomeExibido}!`, 'success');
         } else {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('appScreen').style.display = 'none';
+            mostrarLogin();
         }
     });
     initDateFilters();
@@ -80,9 +97,16 @@ async function handleLogin() {
     }
 }
 
+// --- CADASTRO COM NOME ---
 async function handleSignup() {
-    const email = document.getElementById('authEmail').value.trim();
-    const pass = document.getElementById('authPass').value;
+    const nome = document.getElementById('cadastroNome').value.trim();
+    const email = document.getElementById('cadastroEmail').value.trim();
+    const pass = document.getElementById('cadastroPass').value;
+    
+    if (!nome) {
+        showToast('Digite seu nome', 'error');
+        return;
+    }
     
     if (!email || !pass) {
         showToast('Preencha e-mail e senha', 'error');
@@ -95,8 +119,32 @@ async function handleSignup() {
     }
     
     try {
-        await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
+        // Cria o usuário
+        const userCredential = await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
+        const user = userCredential.user;
+        
+        // Atualiza o perfil com o nome
+        await window.fb_funcs.updateProfile(user, {
+            displayName: nome
+        });
+        
+        // Cria o documento no Firestore com o nome
+        const docRef = window.fb_funcs.doc(window.db, "users", user.uid);
+        await window.fb_funcs.setDoc(docRef, {
+            ...dados,
+            nome: nome,
+            email: email,
+            criadoEm: new Date().toISOString()
+        });
+        
         showToast('Cadastro realizado com sucesso!', 'success');
+        mostrarLogin();
+        
+        // Limpa os campos
+        document.getElementById('cadastroNome').value = '';
+        document.getElementById('cadastroEmail').value = '';
+        document.getElementById('cadastroPass').value = '';
+        
     } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
             showToast('E-mail já cadastrado', 'error');
@@ -640,3 +688,5 @@ window.render = render;
 window.exportarPDF = exportarPDF;
 window.filtrarTabela = filtrarTabela;
 window.addItemLista = addItemLista;
+window.mostrarCadastro = mostrarCadastro;
+window.mostrarLogin = mostrarLogin;
