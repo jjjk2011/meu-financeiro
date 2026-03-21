@@ -4,7 +4,7 @@ let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
-// Dados padrão iniciais (vazios)
+// Dados padrão iniciais
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -15,7 +15,7 @@ const dadosPadrao = {
 };
 
 // Dados atuais em memória
-let dados = JSON.parse(JSON.stringify(dadosPadrao)); // clona o padrão
+let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
 // ==================== FUNÇÕES GLOBAIS ====================
 function toggleDarkMode() {
@@ -72,6 +72,8 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
+        // Força renderização dos investimentos ao mudar para a aba
+        setTimeout(() => renderInvestimentosMP(), 100);
     }
 }
 
@@ -83,9 +85,8 @@ window.addEventListener('load', () => {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('appScreen').style.display = 'block';
             carregarNomeUsuario(user);
-            loadFromCloud(); // carrega os dados do usuário atual
+            loadFromCloud();
         } else {
-            // Reset dados globais ao fazer logout
             dados = JSON.parse(JSON.stringify(dadosPadrao));
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('appScreen').style.display = 'none';
@@ -124,7 +125,6 @@ async function handleSignup() {
         const userCred = await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
         await window.fb_funcs.updateProfile(userCred.user, { displayName: nome });
         
-        // Cria o documento do novo usuário com dados PADRÃO (não copia do usuário atual)
         const novoDoc = {
             ...dadosPadrao,
             nome: nome,
@@ -140,7 +140,6 @@ async function handleSignup() {
 }
 
 function handleLogout() {
-    // Limpa os dados em memória antes de sair
     dados = JSON.parse(JSON.stringify(dadosPadrao));
     window.fb_funcs.signOut(window.auth);
     showToast('Até logo!', 'info');
@@ -159,9 +158,17 @@ async function loadFromCloud() {
             dados.investimentosMP = d.investimentosMP || [];
             dados.categorias = d.categorias || dadosPadrao.categorias;
             dados.metodos = d.metodos || dadosPadrao.metodos;
-            render();
+            
+            // Atualiza os selects
+            updateSelects();
+            
+            // Renderiza baseado na aba atual
+            if (activeTab === 'transacoes') {
+                renderTransacoes();
+            } else {
+                renderInvestimentosMP();
+            }
         } else {
-            // Se não existir, cria com dados padrão
             await syncToCloud();
         }
     } catch (err) { console.error(err); } finally { showLoading(false); }
@@ -173,7 +180,11 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        render();
+        if (activeTab === 'transacoes') {
+            renderTransacoes();
+        } else {
+            renderInvestimentosMP();
+        }
         showToast('Dados salvos ☁️', 'success');
     } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
 }
@@ -188,6 +199,20 @@ function showLoading(show) {
         document.body.appendChild(loader);
     }
     loader.style.transform = show ? 'translateX(0)' : 'translateX(-100%)';
+}
+
+function updateSelects() {
+    const updateSelect = (id, list) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const val = el.value;
+            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+            if (list.includes(val)) el.value = val;
+        }
+    };
+    updateSelect('inCat', dados.categorias);
+    updateSelect('inMeth', dados.metodos);
+    updateSelect('inTipoInvestMP', dados.tiposInvestimento);
 }
 
 // ==================== CATEGORIAS/MÉTODOS ====================
@@ -286,7 +311,7 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'enstein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
         return;
     }
     let html = '';
@@ -301,7 +326,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -316,14 +341,14 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
     tbody.innerHTML = html;
 }
 
-// ==================== INVESTIMENTOS (estilo Mercado Pago) ====================
+// ==================== INVESTIMENTOS ====================
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -359,9 +384,18 @@ function adicionarInvestimentoMP() {
     const invest = {
         id: editId || (Date.now() + Math.random().toString(36).substr(2,9)),
         nome: nome.toUpperCase(),
-        tipo, valorAplicado, valorAtual, rendimentoPercentual,
-        dataAplicacao, dataVencimento: dataVencimento || null, resgate, resgateImediato, garantiaFGC,
-        rentabilidadeAtual, criadoEm: new Date().toISOString(), ultimaAtualizacao: new Date().toISOString()
+        tipo: tipo,
+        valorAplicado: valorAplicado,
+        valorAtual: valorAtual,
+        rendimentoPercentual: rendimentoPercentual,
+        dataAplicacao: dataAplicacao,
+        dataVencimento: dataVencimento || null,
+        resgate: resgate,
+        resgateImediato: resgateImediato,
+        garantiaFGC: garantiaFGC,
+        rentabilidadeAtual: rentabilidadeAtual,
+        criadoEm: new Date().toISOString(),
+        ultimaAtualizacao: new Date().toISOString()
     };
 
     if (editId) {
@@ -374,6 +408,7 @@ function adicionarInvestimentoMP() {
     }
     syncToCloud();
     fecharModalInvestimento();
+    renderInvestimentosMP();
 }
 
 function atualizarRendimentosDiarios() {
@@ -401,6 +436,7 @@ function atualizarRendimentosDiarios() {
     });
     if (atualizado) {
         syncToCloud();
+        renderInvestimentosMP();
         showToast('💰 Rendimentos atualizados!', 'success');
     } else {
         showToast('Nenhuma atualização necessária', 'info');
@@ -409,25 +445,37 @@ function atualizarRendimentosDiarios() {
 
 function renderInvestimentosMP() {
     const investimentos = dados.investimentosMP || [];
+    console.log('Renderizando investimentos:', investimentos.length);
+    
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
     const totalRend = totalAtual - totalInvestido;
     const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
 
-    document.getElementById('totalInvestidoMP').innerText = totalInvestido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('totalAtualMP').innerText = totalAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    const rendEl = document.getElementById('totalRendimentoMP');
-    rendEl.innerText = totalRend.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    rendEl.className = `font-bold ${totalRend>=0?'text-emerald-500':'text-rose-500'}`;
-    document.getElementById('rentabilidadeTotalMP').innerHTML = `${rentTotal>=0?'+':''}${rentTotal.toFixed(2)}%`;
-    document.getElementById('contadorInvestimentosMP').innerText = investimentos.length;
+    // Atualiza os cards de resumo
+    const totalInvestidoEl = document.getElementById('totalInvestidoMP');
+    const totalAtualEl = document.getElementById('totalAtualMP');
+    const totalRendimentoEl = document.getElementById('totalRendimentoMP');
+    const rentabilidadeTotalEl = document.getElementById('rentabilidadeTotalMP');
+    const contadorEl = document.getElementById('contadorInvestimentosMP');
+    
+    if (totalInvestidoEl) totalInvestidoEl.innerText = totalInvestido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    if (totalAtualEl) totalAtualEl.innerText = totalAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    if (totalRendimentoEl) {
+        totalRendimentoEl.innerText = totalRend.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+        totalRendimentoEl.className = `font-bold ${totalRend>=0?'text-emerald-500':'text-rose-500'}`;
+    }
+    if (rentabilidadeTotalEl) rentabilidadeTotalEl.innerHTML = `${rentTotal>=0?'+':''}${rentTotal.toFixed(2)}%`;
+    if (contadorEl) contadorEl.innerText = investimentos.length;
 
     const tbody = document.getElementById('investTableBodyMP');
     if (!tbody) return;
+    
     if (investimentos.length === 0) {
-        tbody.innerHTML = 'enstein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
         return;
     }
+    
     tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
         const dataVenc = t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : 'Sem vencimento';
@@ -435,12 +483,26 @@ function renderInvestimentosMP() {
         const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
-            <td class="py-4 px-3"><div class="font-bold">${t.nome}</div><div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div></td>
-            <td class="py-4 text-right"><div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div></td>
-            <td class="py-4 text-right"><div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div><div class="text-[9px] text-slate-400">${resgateInfo}</div></td>
-            <td class="py-4 text-right"><div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div><div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div></td>
-            <td class="text-right px-2"><button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-         </tr>`;
+            <td class="py-4 px-3">
+                <div class="font-bold text-sm">${t.nome}</div>
+                <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+                <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
+                <div class="text-[9px] text-slate-400">${resgateInfo}</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div>
+                <div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div>
+            </td>
+            <td class="text-right px-2">
+                <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
+            </td>
+        </tr>`;
     }).join('');
 }
 
@@ -487,24 +549,19 @@ function excluirInvestimentoMP(id) {
     if (confirm("Excluir este investimento?")) {
         dados.investimentosMP = dados.investimentosMP.filter(t => String(t.id) !== String(id));
         syncToCloud();
+        renderInvestimentosMP();
         showToast('Investimento excluído', 'success');
     }
 }
 
 // ==================== RENDER PRINCIPAL ====================
 function render() {
-    if (activeTab === 'transacoes') renderTransacoes();
-    else renderInvestimentosMP();
-    const updateSelect = (id, list) => {
-        const el = document.getElementById(id);
-        if (el) {
-            const val = el.value;
-            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
-            if (list.includes(val)) el.value = val;
-        }
-    };
-    updateSelect('inCat', dados.categorias);
-    updateSelect('inMeth', dados.metodos);
+    if (activeTab === 'transacoes') {
+        renderTransacoes();
+    } else {
+        renderInvestimentosMP();
+    }
+    updateSelects();
 }
 
 function initDateFilters() {
