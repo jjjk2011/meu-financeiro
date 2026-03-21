@@ -64,6 +64,7 @@
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
             <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 CLOUD FINANCE</h1>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest" id="authSubtitle">Acesse sua conta</p>
+            
             <div id="loginForm">
                 <input id="authEmail" type="email" placeholder="E-mail" value="" class="w-full p-4 border rounded-2xl mb-3 outline-none text-sm focus:ring-2 focus:ring-emerald-500">
                 <input id="authPass" type="password" placeholder="Senha" value="" class="w-full p-4 border rounded-2xl mb-4 outline-none text-sm focus:ring-2 focus:ring-emerald-500">
@@ -72,6 +73,7 @@
                     <button onclick="mostrarCadastro()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">CADASTRAR</button>
                 </div>
             </div>
+            
             <div id="cadastroForm">
                 <input id="cadastroNome" type="text" placeholder="Seu nome completo" class="w-full p-4 border rounded-2xl mb-3 outline-none text-sm focus:ring-2 focus:ring-emerald-500">
                 <input id="cadastroEmail" type="email" placeholder="E-mail" class="w-full p-4 border rounded-2xl mb-3 outline-none text-sm focus:ring-2 focus:ring-emerald-500">
@@ -157,7 +159,7 @@
                                 <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20">
                             </div>
                         </div>
-                        <div class="overflow-x-auto"><table class="w-full"><tbody id="tableBody"></tbody> </div>
+                        <div class="overflow-x-auto"><table class="w-full"><tbody id="tableBody"></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -192,9 +194,10 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs">
                                 <thead class="text-slate-400 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                    <tr><th class="py-3 px-3 font-medium">Investimento</th><th class="py-3 text-right font-medium">Valor</th><th class="py-3 text-right font-medium">Rendimento</th><th class="py-3 text-right font-medium">Datas</th><th class="py-3 w-8"></th> </thead>
+                                    <tr><th class="py-3 px-3 font-medium">Investimento</th><th class="py-3 text-right font-medium">Valor</th><th class="py-3 text-right font-medium">Rendimento</th><th class="py-3 text-right font-medium">Datas</th><th class="py-3 w-8"></th></tr>
+                                </thead>
                                 <tbody id="investTableBodyMP" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                             </table>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -234,45 +237,6 @@
         </div>
     </div>
 
-    <!-- Modal de Detalhes do Investimento -->
-    <div id="modalDetalhesInvestimento" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) fecharModalDetalhes()">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b dark:border-slate-800 flex justify-between items-center">
-                <h3 id="detalhesNomeInvest" class="font-bold text-slate-800 dark:text-slate-200">💰 CDB MERCADO LIVRE</h3>
-                <button onclick="fecharModalDetalhes()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xl">&times;</button>
-            </div>
-            <div class="p-5 space-y-5">
-                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl text-center">
-                    <p class="text-xs text-slate-400">Total líquido</p>
-                    <p id="detalhesTotalLiquido" class="text-3xl font-bold text-emerald-500">R$ 100,44</p>
-                    <p class="text-[10px] text-slate-400 mt-1">Rende <span id="detalhesRendimentoPercentual">106%</span> do CDI 🚀</p>
-                </div>
-                <div>
-                    <h4 class="font-bold text-sm mb-3">Detalhes do investimento</h4>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center"><span class="text-xs text-slate-400">Valor aplicado</span><span id="detalhesValorAplicado" class="font-bold">R$ 100,00</span></div>
-                        <div class="flex justify-between items-center"><span class="text-xs text-slate-400">Rendimento bruto</span><span id="detalhesRendimentoBruto" class="text-emerald-500 font-bold">+ R$ 0,88</span></div>
-                        <div class="flex justify-between items-center"><span class="text-xs text-slate-400">IOF</span><span id="detalhesIOF" class="text-rose-500">- R$ 0,31</span></div>
-                        <div class="flex justify-between items-center"><span class="text-xs text-slate-400">Imposto de renda</span><span id="detalhesIR" class="text-rose-500">- R$ 0,12</span></div>
-                        <div class="flex justify-between items-center border-t dark:border-slate-700 pt-2 mt-2"><span class="text-xs font-bold">Total líquido</span><span id="detalhesTotalLiquidoResumo" class="font-bold text-emerald-500">R$ 100,44</span></div>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-bold text-sm mb-3">Movimentações</h4>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center"><span id="detalhesDataAplicacao" class="text-xs">+ R$ 100,00<br><span class="text-[9px] text-slate-400">Processada em 02/mar/2026</span></span></div>
-                        <div class="flex justify-between items-center"><span id="detalhesRendimentoBrutoMov" class="text-xs">+ R$ 0,88<br><span class="text-[9px] text-slate-400">Rendimento acumulado</span></span></div>
-                    </div>
-                </div>
-                <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
-                    <h4 class="font-bold text-xs mb-2">Resgate</h4>
-                    <div id="detalhesResgateInfo" class="text-sm"><strong>Em 31/ago/2026</strong><br><span class="text-[10px] text-slate-400">O valor final cai automaticamente na sua conta no vencimento.</span></div>
-                    <div class="mt-3 pt-2 border-t dark:border-slate-700"><span id="detalhesResgateTipo" class="text-[10px] text-emerald-500">⏳ Em 6 meses</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="app.js"></script>
@@ -281,17 +245,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyCBiRF-ISTjYVBv6F1TtCNGpfYWChExVtI",
             authDomain: "meufinanceiro-75b8e.firebaseapp.com",
             projectId: "meufinanceiro-75b8e",
             storageBucket: "meufinanceiro-75b8e.firebasestorage.app",
             messagingSenderId: "1083437842303",
-            appId: "1:1083437842303:web:0c6f76428a738aedffa44a",
-            measurementId: "G-QFZXPY25W1"
+            appId: "1:1083437842303:web:0c6f76428a738aedffa44a"
         };
-
         const app = initializeApp(firebaseConfig);
         window.auth = getAuth(app);
         window.db = getFirestore(app);
