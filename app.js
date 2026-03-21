@@ -275,7 +275,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-            </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -290,7 +290,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-            </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -317,12 +317,11 @@ function adicionarInvestimentoMP() {
     const hoje = new Date();
     const dataAplic = new Date(dataAplicacao);
     const dataVenc = dataVencimento ? new Date(dataVencimento) : null;
-    let diasDecorridos = 0, diasTotais = 0;
     let valorAtual = valorAplicado;
     let rentabilidadeAtual = 0;
     if (dataVenc && hoje > dataAplic) {
-        diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
-        diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
+        const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
+        const diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
         const taxaCDIAnual = 13.15 / 100;
         const taxaDiaria = Math.pow(1 + taxaCDIAnual, 1/252) - 1;
         const rendDiario = taxaDiaria * (rendimentoPercentual / 100);
@@ -415,7 +414,7 @@ function renderInvestimentosMP() {
             <td class="py-4 text-right"><div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div><div class="text-[9px] text-slate-400">${resgateInfo}</div></td>
             <td class="py-4 text-right"><div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div><div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div></td>
             <td class="text-right px-2"><button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-        </tr>`;
+         </tr>`;
     }).join('');
 }
 
