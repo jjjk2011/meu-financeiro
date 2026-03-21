@@ -14,12 +14,43 @@
         }
     </script>
     <style>
+        /* Estilos base */
         #authScreen { display: flex; }
         #appScreen { display: none; }
         #cadastroForm { display: none; }
         #loginForm { display: block; }
         .loading-btn { opacity: 0.6; pointer-events: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* CORREÇÃO: Estilização dos selects para modo escuro */
+        select {
+            background-color: #f9fafb; /* bg-slate-50 */
+            color: #111827; /* text-slate-900 */
+            border-color: #e2e8f0;
+        }
+        .dark select {
+            background-color: #1e293b; /* dark:bg-slate-800 */
+            color: #f1f5f9; /* dark:text-slate-100 */
+            border-color: #334155;
+        }
+        /* Estiliza as opções do dropdown */
+        select option {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .dark select option {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+        /* Para inputs date também */
+        input[type="date"] {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .dark input[type="date"] {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -92,23 +123,26 @@
                             <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">➕ NOVO REGISTRO</h3>
                             <div class="space-y-3">
                                 <input type="hidden" id="editId">
-                                <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm"><option value="income">💰 Receita (+)</option><option value="expense" selected>📉 Despesa (-)</option></select>
-                                <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
+                                <select id="inType" class="w-full p-3 rounded-2xl text-sm outline-none">
+                                    <option value="income">💰 Receita (+)</option>
+                                    <option value="expense" selected>📉 Despesa (-)</option>
+                                </select>
+                                <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-2xl">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="inVal" type="number" placeholder="Valor" step="0.01" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
-                                    <input id="inParc" type="number" placeholder="Parc." min="1" max="24" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
+                                    <input id="inVal" type="number" placeholder="Valor" step="0.01" class="p-3 rounded-2xl">
+                                    <input id="inParc" type="number" placeholder="Parc." min="1" max="24" class="p-3 rounded-2xl">
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
-                                    <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
+                                    <select id="inCat" class="p-3 rounded-2xl text-xs"></select>
+                                    <select id="inMeth" class="p-3 rounded-2xl text-xs"></select>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2 pt-2">
-                                    <div><input id="newCat" type="text" placeholder="Nova categoria" class="w-full p-2 text-[10px] bg-slate-50 border rounded-xl mb-1"><button onclick="addItemLista('categorias', 'newCat')" class="w-full text-[8px] bg-slate-200 py-1 rounded-lg">+ Adicionar</button></div>
-                                    <div><input id="newMeth" type="text" placeholder="Novo método" class="w-full p-2 text-[10px] bg-slate-50 border rounded-xl mb-1"><button onclick="addItemLista('metodos', 'newMeth')" class="w-full text-[8px] bg-slate-200 py-1 rounded-lg">+ Adicionar</button></div>
+                                    <div><input id="newCat" type="text" placeholder="Nova categoria" class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border rounded-xl mb-1"><button onclick="addItemLista('categorias', 'newCat')" class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg">+ Adicionar</button></div>
+                                    <div><input id="newMeth" type="text" placeholder="Novo método" class="w-full p-2 text-[10px] bg-slate-50 dark:bg-slate-800 border rounded-xl mb-1"><button onclick="addItemLista('metodos', 'newMeth')" class="w-full text-[8px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-1 rounded-lg">+ Adicionar</button></div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
-                                    <input id="inYear" type="number" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs">
+                                    <select id="inMonth" class="p-3 rounded-2xl text-xs"></select>
+                                    <input id="inYear" type="number" class="p-3 rounded-2xl text-xs">
                                 </div>
                                 <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl text-[10px] uppercase tracking-widest shadow-lg">💾 SALVAR NA NUVEM</button>
                                 <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase">← Cancelar Edição</button>
@@ -127,14 +161,14 @@
                     <!-- Tabela Transações -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border">
                         <div class="flex flex-col md:flex-row justify-between gap-4 mb-6 border-b pb-4">
-                            <h3 class="font-bold">📋 HISTÓRICO <span id="contadorRegistros" class="text-[8px] bg-slate-100 px-2 py-1 rounded-full">0</span></h3>
+                            <h3 class="font-bold">📋 HISTÓRICO <span id="contadorRegistros" class="text-[8px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">0</span></h3>
                             <div class="flex gap-2">
-                                <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="p-2 border rounded-xl text-xs">
+                                <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="p-2 border rounded-xl text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400">
                                 <select id="fMonth" onchange="render()" class="p-2 border rounded-xl text-xs"></select>
                                 <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20">
                             </div>
                         </div>
-                        <div class="overflow-x-auto"><table class="w-full"><tbody id="tableBody"></tbody></table></div>
+                        <div class="overflow-x-auto"><table class="w-full"><tbody id="tableBody"></tbody> </div>
                     </div>
                 </div>
             </div>
@@ -165,16 +199,15 @@
                     <!-- Lista de Investimentos -->
                     <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border overflow-hidden">
                         <div class="p-5 border-b flex justify-between items-center">
-                            <h3 class="font-bold flex items-center gap-2">📈 SEUS INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[8px] bg-slate-100 px-2 py-1 rounded-full">0</span></h3>
+                            <h3 class="font-bold flex items-center gap-2">📈 SEUS INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[8px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">0</span></h3>
                             <button onclick="abrirModalInvestimento()" class="text-[10px] text-emerald-500 font-bold">+ Novo</button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead class="text-slate-400 text-[10px] border-b bg-slate-50 dark:bg-slate-800/50">
-                                    <tr><th class="py-3 px-3 text-left">Investimento</th><th class="py-3 text-right">Valor</th><th class="py-3 text-right">Rendimento</th><th class="py-3 text-right">Datas</th><th class="py-3 w-8"></th></tr>
-                                </thead>
+                                    <tr><th class="py-3 px-3 text-left">Investimento</th><th class="py-3 text-right">Valor</th><th class="py-3 text-right">Rendimento</th><th class="py-3 text-right">Datas</th><th class="py-3 w-8"></th> </thead>
                                 <tbody id="investTableBodyMP" class="divide-y"></tbody>
-                            </table>
+                             </table>
                         </div>
                     </div>
                 </div>
