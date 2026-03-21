@@ -15,8 +15,13 @@ const dadosPadrao = {
 
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
-// ==================== FUNÇÕES AUXILIARES ====================
-function showToast(msg, type = 'success') {
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    showToast(`Modo ${isDark ? 'escuro' : 'claro'} ativado`, 'info');
+}
+
+function showToast(message, type = 'success') {
     if (toastTimeout) clearTimeout(toastTimeout);
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -24,19 +29,13 @@ function showToast(msg, type = 'success') {
         toast.id = 'toast';
         document.body.appendChild(toast);
     }
-    const bg = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-blue-500';
-    toast.className = `fixed bottom-4 right-4 ${bg} text-white px-6 py-3 rounded-xl text-sm font-bold shadow-2xl transform transition-all duration-500 translate-y-0 opacity-100 z-50 max-w-sm`;
-    toast.textContent = msg;
+    const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-blue-500';
+    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl text-sm font-bold shadow-2xl transform transition-all duration-500 translate-y-0 opacity-100 z-50 max-w-sm`;
+    toast.textContent = message;
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 500);
     }, 3000);
-}
-
-function toggleDarkMode() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    showToast(`Modo ${isDark ? 'escuro' : 'claro'} ativado`, 'info');
 }
 
 function mostrarCadastro() {
@@ -74,7 +73,6 @@ function mudarAba(aba) {
     }
 }
 
-// ==================== AUTENTICAÇÃO ====================
 window.addEventListener('load', () => {
     window.fb_funcs.onAuthStateChanged(window.auth, (user) => {
         if (user) {
@@ -135,7 +133,6 @@ function handleLogout() {
     showToast('Até logo!', 'info');
 }
 
-// ==================== SINCRONIZAÇÃO ====================
 async function loadFromCloud() {
     if (!currentUser) return;
     showLoading(true);
@@ -150,12 +147,12 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            console.log('✅ Dados carregados. Investimentos:', dados.investimentosMP.length);
-            render();
+            if (activeTab === 'transacoes') renderTransacoes();
+            else renderInvestimentosMP();
         } else {
             await syncToCloud();
         }
-    } catch (err) { console.error('Erro no loadFromCloud:', err); showToast('Erro ao carregar dados', 'error'); } finally { showLoading(false); }
+    } catch (err) { console.error(err); } finally { showLoading(false); }
 }
 
 async function syncToCloud() {
@@ -164,15 +161,10 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        console.log('✅ Dados salvos. Investimentos:', dados.investimentosMP.length);
-        render();
+        if (activeTab === 'transacoes') renderTransacoes();
+        else renderInvestimentosMP();
         showToast('Dados salvos ☁️', 'success');
-    } catch (err) {
-        console.error('Erro no syncToCloud:', err);
-        showToast('Erro ao salvar', 'error');
-    } finally {
-        if (btn) btn.classList.remove('loading-btn');
-    }
+    } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
 }
 
 function showLoading(show) {
@@ -212,7 +204,6 @@ async function addItemLista(tipo, inputId) {
     showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
 }
 
-// ==================== TRANSAÇÕES ====================
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -295,7 +286,7 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada<i>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td></tr>';
         return;
     }
     let html = '';
@@ -310,7 +301,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -325,14 +316,13 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
     tbody.innerHTML = html;
 }
 
-// ==================== INVESTIMENTOS ====================
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -390,7 +380,6 @@ function adicionarInvestimentoMP() {
         dados.investimentosMP.push(invest);
         showToast('Investimento adicionado', 'success');
     }
-    console.log('Investimentos após adição:', dados.investimentosMP.length);
     syncToCloud();
     fecharModalInvestimento();
     renderInvestimentosMP();
@@ -430,8 +419,8 @@ function atualizarRendimentosDiarios() {
 
 function renderInvestimentosMP() {
     const investimentos = dados.investimentosMP || [];
-    console.log('Renderizando investimentos, quantidade:', investimentos.length);
-
+    console.log('Renderizando investimentos:', investimentos.length);
+    
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
     const totalRend = totalAtual - totalInvestido;
@@ -453,13 +442,10 @@ function renderInvestimentosMP() {
     if (contadorEl) contadorEl.innerText = investimentos.length;
 
     const tbody = document.getElementById('investTableBodyMP');
-    if (!tbody) {
-        console.error('investTableBodyMP não encontrado!');
-        return;
-    }
+    if (!tbody) return;
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td><tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
         return;
     }
     
@@ -469,7 +455,7 @@ function renderInvestimentosMP() {
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
         const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
         return `
-        <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="abrirDetalhesInvestimento('${idSeguro}')">
+        <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3">
                 <div class="font-bold text-sm">${t.nome}</div>
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
@@ -489,7 +475,7 @@ function renderInvestimentosMP() {
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
             </td>
-          </tr>`;
+        </tr>`;
     }).join('');
 }
 
@@ -541,44 +527,6 @@ function excluirInvestimentoMP(id) {
     }
 }
 
-function abrirDetalhesInvestimento(id) {
-    const invest = dados.investimentosMP.find(x => String(x.id) === String(id));
-    if (!invest) return;
-    const modal = document.getElementById('modalDetalhesInvestimento');
-    if (!modal) return;
-    
-    const hoje = new Date();
-    const dataAplic = new Date(invest.dataAplicacao);
-    const dataVenc = invest.dataVencimento ? new Date(invest.dataVencimento) : null;
-    const rendimentoBruto = invest.valorAtual - invest.valorAplicado;
-    
-    document.getElementById('detalhesNomeInvest').innerText = invest.nome;
-    document.getElementById('detalhesValorAplicado').innerText = invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesRendimentoBruto').innerHTML = `+ ${rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
-    document.getElementById('detalhesTotalLiquido').innerHTML = invest.valorAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesTotalLiquidoResumo').innerHTML = invest.valorAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesRendimentoPercentual').innerText = `${invest.rendimentoPercentual}%`;
-    document.getElementById('detalhesDataAplicacao').innerHTML = `+ ${invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Processada em ${new Date(invest.dataAplicacao).toLocaleDateString('pt-BR')}</span>`;
-    document.getElementById('detalhesRendimentoBrutoMov').innerHTML = `+ ${rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Rendimento acumulado</span>`;
-    
-    if (dataVenc) {
-        const diasRestantes = Math.max(0, Math.ceil((dataVenc - hoje) / (1000*60*60*24)));
-        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Em ${dataVenc.toLocaleDateString('pt-BR')}</strong><br><span class="text-[10px] text-slate-400">${diasRestantes} dias restantes</span><p class="text-[10px] text-slate-400 mt-1">O valor final cai automaticamente na sua conta no vencimento.</p>`;
-    } else {
-        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Sem vencimento definido</strong><br><span class="text-[10px] text-slate-400">Resgate a qualquer momento</span>`;
-    }
-    document.getElementById('detalhesResgateTipo').innerHTML = invest.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${invest.resgate || 'Prazo determinado'}`;
-    
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function fecharModalDetalhes() {
-    const modal = document.getElementById('modalDetalhesInvestimento');
-    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-}
-
-// ==================== FUNÇÕES GERAIS ====================
 function render() {
     if (activeTab === 'transacoes') renderTransacoes();
     else renderInvestimentosMP();
@@ -684,7 +632,6 @@ function iniciarAtualizacaoAutomatica() {
     setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
 }
 
-// Exportações
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
@@ -709,7 +656,5 @@ window.resetFormInvestMP = resetFormInvestMP;
 window.prepararEdicaoInvestMP = prepararEdicaoInvestMP;
 window.excluirInvestimentoMP = excluirInvestimentoMP;
 window.excluirTodasParcelas = excluirTodasParcelas;
-window.abrirDetalhesInvestimento = abrirDetalhesInvestimento;
-window.fecharModalDetalhes = fecharModalDetalhes;
 
 setTimeout(() => { if (currentUser) iniciarAtualizacaoAutomatica(); }, 2000);
