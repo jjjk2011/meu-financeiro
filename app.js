@@ -295,13 +295,13 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada<i>stein';
         return;
     }
     let html = '';
     let gruposParcelas = {};
     if (receitas.length) {
-        html += `<tr class="bg-emerald-50 dark:bg-emerald-900/20"><td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">💰 RECEITAS</td> </tr>`;
+        html += `<tr class="bg-emerald-50 dark:bg-emerald-900/20"><td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">💰 RECEITAS</td></tr>`;
         receitas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
             const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
@@ -315,7 +315,7 @@ function renderTransacoes() {
         });
     }
     if (despesas.length) {
-        html += `<tr class="bg-rose-50 dark:bg-rose-900/20"><td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">📉 DESPESAS</td> </tr>`;
+        html += `<tr class="bg-rose-50 dark:bg-rose-900/20"><td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">📉 DESPESAS</td></tr>`;
         gruposParcelas = {};
         despesas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
@@ -459,7 +459,7 @@ function renderInvestimentosMP() {
     }
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td><tr>';
         return;
     }
     
@@ -489,7 +489,7 @@ function renderInvestimentosMP() {
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
             </td>
-         </tr>`;
+          </tr>`;
     }).join('');
 }
 
