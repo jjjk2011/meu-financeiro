@@ -1,10 +1,10 @@
+// ==================== CONFIGURAÇÃO INICIAL ====================
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 let currentUser = null;
 let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
-// Dados padrão
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -16,13 +16,7 @@ const dadosPadrao = {
 
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
-// ==================== FUNÇÕES GLOBAIS ====================
-function toggleDarkMode() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    showToast(`Modo ${isDark ? 'escuro' : 'claro'} ativado`, 'info');
-}
-
+// ==================== FUNÇÕES AUXILIARES ====================
 function showToast(message, type = 'success') {
     if (toastTimeout) clearTimeout(toastTimeout);
     let toast = document.getElementById('toast');
@@ -40,6 +34,12 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    showToast(`Modo ${isDark ? 'escuro' : 'claro'} ativado`, 'info');
+}
+
 function mostrarCadastro() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('cadastroForm').style.display = 'block';
@@ -55,12 +55,10 @@ function mudarAba(aba) {
     activeTab = aba;
     const tabTrans = document.getElementById('tabTransacoes');
     const tabInv = document.getElementById('tabInvestimentos');
-    
     tabTrans.classList.remove('bg-emerald-600', 'text-white');
     tabInv.classList.remove('bg-emerald-600', 'text-white');
     tabTrans.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
     tabInv.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
-    
     if (aba === 'transacoes') {
         tabTrans.classList.add('bg-emerald-600', 'text-white');
         document.getElementById('areaTransacoes').style.display = 'block';
@@ -73,11 +71,7 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
-        // Força a renderização com delay
-        setTimeout(() => {
-            console.log('Forçando renderização dos investimentos');
-            renderInvestimentosMP();
-        }, 100);
+        setTimeout(() => renderInvestimentosMP(), 100);
     }
 }
 
@@ -142,6 +136,7 @@ function handleLogout() {
     showToast('Até logo!', 'info');
 }
 
+// ==================== SINC. NUVEM ====================
 async function loadFromCloud() {
     if (!currentUser) return;
     showLoading(true);
@@ -156,6 +151,8 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
+            console.log('Dados carregados do Firestore:', d); // DEBUG
+            console.log('investimentosMP carregados:', dados.investimentosMP); // DEBUG
             render();
         } else {
             await syncToCloud();
@@ -169,9 +166,15 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
+        console.log('Dados salvos no Firestore:', dados); // DEBUG
         render();
         showToast('Dados salvos ☁️', 'success');
-    } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
+    } catch (err) {
+        console.error('Erro ao salvar:', err);
+        showToast('Erro ao salvar', 'error');
+    } finally {
+        if (btn) btn.classList.remove('loading-btn');
+    }
 }
 
 function showLoading(show) {
@@ -211,7 +214,7 @@ async function addItemLista(tipo, inputId) {
     showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
 }
 
-// ==================== TRANSAÇÕES ====================
+// ==================== TRANSAÇÕES (resumido) ====================
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -389,6 +392,7 @@ function adicionarInvestimentoMP() {
         dados.investimentosMP.push(invest);
         showToast('Investimento adicionado', 'success');
     }
+    console.log('Investimentos após adição:', dados.investimentosMP); // DEBUG
     syncToCloud();
     fecharModalInvestimento();
     renderInvestimentosMP();
@@ -436,7 +440,6 @@ function renderInvestimentosMP() {
     const totalRend = totalAtual - totalInvestido;
     const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
 
-    // Atualiza os cards
     const totalInvestidoEl = document.getElementById('totalInvestidoMP');
     const totalAtualEl = document.getElementById('totalAtualMP');
     const totalRendimentoEl = document.getElementById('totalRendimentoMP');
@@ -454,12 +457,12 @@ function renderInvestimentosMP() {
 
     const tbody = document.getElementById('investTableBodyMP');
     if (!tbody) {
-        console.error('Elemento investTableBodyMP não encontrado!');
+        console.error('investTableBodyMP não encontrado');
         return;
     }
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
         return;
     }
     
@@ -563,7 +566,8 @@ function abrirDetalhesInvestimento(id) {
     document.getElementById('detalhesRendimentoBrutoMov').innerHTML = `+ ${rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Rendimento acumulado</span>`;
     
     if (dataVenc) {
-        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Em ${dataVenc.toLocaleDateString('pt-BR')}</strong><br><span class="text-[10px] text-slate-400">${Math.max(0, Math.ceil((dataVenc - hoje) / (1000*60*60*24)))} dias restantes</span><p class="text-[10px] text-slate-400 mt-1">O valor final cai automaticamente na sua conta no vencimento.</p>`;
+        const diasRestantes = Math.max(0, Math.ceil((dataVenc - hoje) / (1000*60*60*24)));
+        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Em ${dataVenc.toLocaleDateString('pt-BR')}</strong><br><span class="text-[10px] text-slate-400">${diasRestantes} dias restantes</span><p class="text-[10px] text-slate-400 mt-1">O valor final cai automaticamente na sua conta no vencimento.</p>`;
     } else {
         document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Sem vencimento definido</strong><br><span class="text-[10px] text-slate-400">Resgate a qualquer momento</span>`;
     }
@@ -578,12 +582,10 @@ function fecharModalDetalhes() {
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
 }
 
+// ==================== FUNÇÕES GERAIS ====================
 function render() {
-    if (activeTab === 'transacoes') {
-        renderTransacoes();
-    } else {
-        renderInvestimentosMP();
-    }
+    if (activeTab === 'transacoes') renderTransacoes();
+    else renderInvestimentosMP();
     updateSelects();
 }
 
