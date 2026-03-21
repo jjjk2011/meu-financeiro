@@ -68,9 +68,9 @@ function mudarAba(aba) {
         tabInv.classList.add('bg-emerald-600', 'text-white');
         document.getElementById('areaTransacoes').style.display = 'none';
         document.getElementById('areaInvestimentos').style.display = 'block';
+        
         resetFormInvestMP();
-        render();
-        setTimeout(() => renderInvestimentosMP(), 50);
+        renderInvestimentosMP(); // Chame diretamente aqui para garantir a exibição
     }
 }
 
