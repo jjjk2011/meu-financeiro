@@ -1,10 +1,10 @@
-// ==================== CONFIGURAÇÃO INICIAL ====================
-const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let currentUser = null;
 let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
+// Estrutura de dados padrão (vazia)
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -14,10 +14,11 @@ const dadosPadrao = {
     corretoras: ['MERCADO PAGO', 'NU INVEST', 'XP INC']
 };
 
+// Dados em memória
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
 // ==================== FUNÇÕES AUXILIARES ====================
-function showToast(message, type = 'success') {
+function showToast(msg, type = 'success') {
     if (toastTimeout) clearTimeout(toastTimeout);
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -25,9 +26,9 @@ function showToast(message, type = 'success') {
         toast.id = 'toast';
         document.body.appendChild(toast);
     }
-    const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-blue-500';
-    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl text-sm font-bold shadow-2xl transform transition-all duration-500 translate-y-0 opacity-100 z-50 max-w-sm`;
-    toast.textContent = message;
+    const bg = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-blue-500';
+    toast.className = `fixed bottom-4 right-4 ${bg} text-white px-6 py-3 rounded-xl text-sm font-bold shadow-2xl transform transition-all duration-500 translate-y-0 opacity-100 z-50 max-w-sm`;
+    toast.textContent = msg;
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-2');
         setTimeout(() => toast.remove(), 500);
@@ -71,7 +72,7 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
-        setTimeout(() => renderInvestimentosMP(), 100);
+        setTimeout(() => renderInvestimentosMP(), 50);
     }
 }
 
@@ -136,7 +137,7 @@ function handleLogout() {
     showToast('Até logo!', 'info');
 }
 
-// ==================== SINC. NUVEM ====================
+// ==================== SINCRONIZAÇÃO ====================
 async function loadFromCloud() {
     if (!currentUser) return;
     showLoading(true);
@@ -151,8 +152,7 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            console.log('Dados carregados do Firestore:', d); // DEBUG
-            console.log('investimentosMP carregados:', dados.investimentosMP); // DEBUG
+            console.log('✅ Dados carregados:', { investimentos: dados.investimentosMP.length });
             render();
         } else {
             await syncToCloud();
@@ -166,11 +166,11 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        console.log('Dados salvos no Firestore:', dados); // DEBUG
+        console.log('✅ Dados salvos:', { investimentos: dados.investimentosMP.length });
         render();
         showToast('Dados salvos ☁️', 'success');
     } catch (err) {
-        console.error('Erro ao salvar:', err);
+        console.error(err);
         showToast('Erro ao salvar', 'error');
     } finally {
         if (btn) btn.classList.remove('loading-btn');
@@ -392,7 +392,7 @@ function adicionarInvestimentoMP() {
         dados.investimentosMP.push(invest);
         showToast('Investimento adicionado', 'success');
     }
-    console.log('Investimentos após adição:', dados.investimentosMP); // DEBUG
+    console.log('Investimentos após adição:', dados.investimentosMP.length);
     syncToCloud();
     fecharModalInvestimento();
     renderInvestimentosMP();
@@ -433,8 +433,8 @@ function atualizarRendimentosDiarios() {
 function renderInvestimentosMP() {
     console.log('Renderizando investimentos...');
     const investimentos = dados.investimentosMP || [];
-    console.log('Quantidade de investimentos:', investimentos.length);
-    
+    console.log('Quantidade:', investimentos.length);
+
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
     const totalRend = totalAtual - totalInvestido;
@@ -457,7 +457,7 @@ function renderInvestimentosMP() {
 
     const tbody = document.getElementById('investTableBodyMP');
     if (!tbody) {
-        console.error('investTableBodyMP não encontrado');
+        console.error('investTableBodyMP não encontrado!');
         return;
     }
     
