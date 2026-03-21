@@ -1,241 +1,610 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Finance Pro</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#10b981">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let currentUser = null;
+let filtroBusca = '';
+let toastTimeout = null;
+let activeTab = 'transacoes';
+
+// Estrutura de dados
+let dados = { 
+    transacoes: [], 
+    investimentosMP: [],
+    categorias: ['ALIMENTAÇÃO', 'CONTAS', 'SAÚDE', 'LAZER', 'TRANSPORTE', 'EDUCAÇÃO'], 
+    metodos: ['DINHEIRO', 'CRÉDITO', 'DÉBITO', 'PIX', 'TRANSFERÊNCIA'],
+    tiposInvestimento: ['RENDA FIXA', 'FUNDOS', 'AÇÕES'],
+    corretoras: ['MERCADO PAGO', 'NU INVEST', 'XP INC']
+};
+
+// ==================== FUNÇÕES GLOBAIS ====================
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    showToast(`Modo ${isDark ? 'escuro' : 'claro'} ativado`, 'info');
+}
+
+function showToast(message, type = 'success') {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-blue-500';
+    toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-xl text-sm font-bold shadow-2xl transform transition-all duration-500 translate-y-0 opacity-100 z-50 max-w-sm`;
+    toast.textContent = message;
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+function mostrarCadastro() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('cadastroForm').style.display = 'block';
+    document.getElementById('authSubtitle').innerText = 'Crie sua conta';
+}
+function mostrarLogin() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('cadastroForm').style.display = 'none';
+    document.getElementById('authSubtitle').innerText = 'Acesse sua conta';
+}
+
+function mudarAba(aba) {
+    activeTab = aba;
+    const tabTrans = document.getElementById('tabTransacoes');
+    const tabInv = document.getElementById('tabInvestimentos');
+    tabTrans.classList.remove('bg-emerald-600', 'text-white');
+    tabInv.classList.remove('bg-emerald-600', 'text-white');
+    tabTrans.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+    tabInv.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+    if (aba === 'transacoes') {
+        tabTrans.classList.add('bg-emerald-600', 'text-white');
+        document.getElementById('areaTransacoes').style.display = 'block';
+        document.getElementById('areaInvestimentos').style.display = 'none';
+        resetForm();
+        render();
+    } else {
+        tabInv.classList.add('bg-emerald-600', 'text-white');
+        document.getElementById('areaTransacoes').style.display = 'none';
+        document.getElementById('areaInvestimentos').style.display = 'block';
+        resetFormInvestMP();
+        render();
+    }
+}
+
+// ==================== AUTENTICAÇÃO ====================
+window.addEventListener('load', () => {
+    window.fb_funcs.onAuthStateChanged(window.auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            carregarNomeUsuario(user);
+            loadFromCloud();
+        } else {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('appScreen').style.display = 'none';
+            mostrarLogin();
         }
-    </script>
-    <style>
-        #authScreen { display: flex; }
-        #appScreen { display: none; }
-        #cadastroForm { display: none; }
-        #loginForm { display: block; }
-        .loading-btn { opacity: 0.6; pointer-events: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    });
+    initDateFilters();
+    initKeyboardShortcuts();
+});
 
-    <!-- Tela de Autenticação -->
-    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
-            <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 CLOUD FINANCE</h1>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest" id="authSubtitle">Acesse sua conta</p>
-            
-            <!-- Login -->
-            <div id="loginForm">
-                <input id="authEmail" type="email" placeholder="E-mail" value=""
-                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-                <input id="authPass" type="password" placeholder="Senha" value=""
-                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-                <div class="flex gap-2">
-                    <button onclick="handleLogin()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">ENTRAR</button>
-                    <button onclick="mostrarCadastro()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">CADASTRAR</button>
-                </div>
-            </div>
-            
-            <!-- Cadastro -->
-            <div id="cadastroForm">
-                <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
-                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-                <input id="cadastroEmail" type="email" placeholder="E-mail" 
-                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-                <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" 
-                       class="w-full p-4 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-emerald-500">
-                <div class="flex gap-2">
-                    <button onclick="handleSignup()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">CRIAR CONTA</button>
-                    <button onclick="mostrarLogin()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">VOLTAR</button>
-                </div>
-            </div>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-4">Use qualquer e-mail/senha para teste (mínimo 6 caracteres)</p>
-        </div>
-    </div>
+async function carregarNomeUsuario(user) {
+    try {
+        const docRef = window.fb_funcs.doc(window.db, "users", user.uid);
+        const snap = await window.fb_funcs.getDoc(docRef);
+        let nome = snap.exists() && snap.data().nome ? snap.data().nome : (user.displayName || user.email.split('@')[0]);
+        if (!user.displayName && nome) await window.fb_funcs.updateProfile(user, { displayName: nome });
+        document.getElementById('userDisplay').innerHTML = `<span class="text-emerald-400">👤 ${nome}</span><span class="ml-2 text-[8px] opacity-50">● ONLINE</span>`;
+        showToast(`Bem-vindo, ${nome}!`, 'success');
+    } catch (err) { console.error(err); }
+}
 
-    <!-- App Principal -->
-    <div id="appScreen" class="p-4 md:p-8">
-        <div class="max-w-7xl mx-auto">
-            <!-- Header -->
-            <div class="bg-slate-800 dark:bg-slate-900 text-white p-4 md:p-6 mb-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
-                <div>
-                    <h1 class="font-black text-xl text-emerald-400 uppercase tracking-tighter flex items-center gap-2">
-                        ☁️ CLOUD FINANCE <span class="text-[8px] bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full">PRO</span>
-                    </h1>
-                    <p id="userDisplay" class="text-[10px] opacity-60 uppercase font-bold tracking-widest"></p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="toggleDarkMode()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm transition">🌓</button>
-                    <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase">📄 PDF</button>
-                    <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase">🚪 Sair</button>
-                </div>
-            </div>
+async function handleLogin() {
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPass').value;
+    if (!email || !pass) return showToast('Preencha e-mail e senha', 'error');
+    try { await window.fb_funcs.signInWithEmailAndPassword(window.auth, email, pass); } catch (err) { showToast('Erro no login', 'error'); }
+}
+async function handleSignup() {
+    const nome = document.getElementById('cadastroNome').value.trim();
+    const email = document.getElementById('cadastroEmail').value.trim();
+    const pass = document.getElementById('cadastroPass').value;
+    if (!nome) return showToast('Digite seu nome', 'error');
+    if (pass.length < 6) return showToast('Senha deve ter 6+ caracteres', 'error');
+    try {
+        const userCred = await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
+        await window.fb_funcs.updateProfile(userCred.user, { displayName: nome });
+        const docRef = window.fb_funcs.doc(window.db, "users", userCred.user.uid);
+        await window.fb_funcs.setDoc(docRef, { ...dados, nome, email, criadoEm: new Date().toISOString() });
+        showToast('Cadastro realizado!', 'success');
+        mostrarLogin();
+    } catch (err) { showToast('Erro ao cadastrar', 'error'); }
+}
+function handleLogout() { window.fb_funcs.signOut(window.auth); showToast('Até logo!', 'info'); }
 
-            <!-- Abas -->
-            <div class="flex gap-2 mb-6">
-                <button id="tabTransacoes" onclick="mudarAba('transacoes')" class="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">💰 TRANSAÇÕES</button>
-                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" class="flex-1 md:flex-none px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-2">📈 INVESTIMENTOS</button>
-            </div>
+// ==================== SINC. NUVEM ====================
+async function loadFromCloud() {
+    if (!currentUser) return;
+    showLoading(true);
+    try {
+        const docRef = window.fb_funcs.doc(window.db, "users", currentUser.uid);
+        const snap = await window.fb_funcs.getDoc(docRef);
+        if (snap.exists()) {
+            const d = snap.data();
+            dados.transacoes = d.transacoes || [];
+            dados.investimentosMP = d.investimentosMP || [];
+            dados.categorias = d.categorias || dados.categorias;
+            dados.metodos = d.metodos || dados.metodos;
+            render();
+        } else await syncToCloud();
+    } catch (err) { console.error(err); } finally { showLoading(false); }
+}
+async function syncToCloud() {
+    if (!currentUser) return;
+    const btn = document.getElementById('btnSave');
+    if (btn) btn.classList.add('loading-btn');
+    try {
+        await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
+        render();
+        showToast('Dados salvos ☁️', 'success');
+    } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
+}
+function showLoading(show) {
+    let loader = document.getElementById('globalLoader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'globalLoader';
+        loader.className = 'fixed top-0 left-0 w-full h-1 bg-emerald-500 transform transition-transform duration-300 z-50';
+        loader.style.transform = 'translateX(-100%)';
+        document.body.appendChild(loader);
+    }
+    loader.style.transform = show ? 'translateX(0)' : 'translateX(-100%)';
+}
 
-            <!-- Área de Transações -->
-            <div id="areaTransacoes">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Formulário Transações -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
-                            <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b dark:border-slate-800 pb-2">➕ NOVO REGISTRO</h3>
-                            <div class="space-y-3">
-                                <input type="hidden" id="editId">
-                                <select id="inType" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl text-sm"><option value="income">💰 Receita (+)</option><option value="expense" selected>📉 Despesa (-)</option></select>
-                                <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input id="inVal" type="number" placeholder="Valor" step="0.01" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
-                                    <input id="inParc" type="number" placeholder="Parc." min="1" max="24" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <select id="inCat" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
-                                    <select id="inMeth" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 pt-2">
-                                    <div><input id="newCat" type="text" placeholder="Nova categoria" class="w-full p-2 text-[10px] bg-slate-50 border rounded-xl mb-1"><button onclick="addItemLista('categorias', 'newCat')" class="w-full text-[8px] bg-slate-200 py-1 rounded-lg">+ Adicionar</button></div>
-                                    <div><input id="newMeth" type="text" placeholder="Novo método" class="w-full p-2 text-[10px] bg-slate-50 border rounded-xl mb-1"><button onclick="addItemLista('metodos', 'newMeth')" class="w-full text-[8px] bg-slate-200 py-1 rounded-lg">+ Adicionar</button></div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <select id="inMonth" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs"></select>
-                                    <input id="inYear" type="number" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-xs">
-                                </div>
-                                <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-2xl text-[10px] uppercase tracking-widest shadow-lg">💾 SALVAR NA NUVEM</button>
-                                <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-2 rounded-xl text-[9px] uppercase">← Cancelar Edição</button>
-                            </div>
-                        </div>
-                        <!-- Card Saldo -->
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl text-center border">
-                            <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">SALDO DO PERÍODO</p>
-                            <h2 id="totalBalance" class="text-4xl font-black">R$ 0,00</h2>
-                            <div class="grid grid-cols-2 gap-3 mt-4">
-                                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl"><p class="text-[8px] uppercase text-slate-400">Receitas</p><p id="totalReceitas" class="text-emerald-600 font-bold text-sm">R$ 0,00</p></div>
-                                <div class="bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl"><p class="text-[8px] uppercase text-slate-400">Despesas</p><p id="totalDespesas" class="text-rose-600 font-bold text-sm">R$ 0,00</p></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Tabela Transações -->
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border">
-                        <div class="flex flex-col md:flex-row justify-between gap-4 mb-6 border-b pb-4">
-                            <h3 class="font-bold">📋 HISTÓRICO <span id="contadorRegistros" class="text-[8px] bg-slate-100 px-2 py-1 rounded-full">0</span></h3>
-                            <div class="flex gap-2">
-                                <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="p-2 border rounded-xl text-xs">
-                                <select id="fMonth" onchange="render()" class="p-2 border rounded-xl text-xs"></select>
-                                <input id="fYear" type="number" onchange="render()" class="p-2 border rounded-xl text-xs w-20">
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto"><table class="w-full"><tbody id="tableBody"></tbody></table></div>
-                    </div>
-                </div>
-            </div>
+// ==================== CATEGORIAS/MÉTODOS ====================
+async function addItemLista(tipo, inputId) {
+    const input = document.getElementById(inputId);
+    const valor = input.value.trim().toUpperCase();
+    if (!valor) return showToast('Digite um valor', 'error');
+    if (dados[tipo].includes(valor)) return showToast('Item já existe', 'error');
+    dados[tipo].push(valor);
+    input.value = '';
+    await syncToCloud();
+    showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
+}
 
-            <!-- Área de Investimentos (estilo Mercado Pago) -->
-            <div id="areaInvestimentos" style="display: none;">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Cards de Resumo -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 rounded-3xl shadow-xl">
-                            <p class="text-xs opacity-80">💰 Saldo investido</p>
-                            <h2 id="totalInvestidoMP" class="text-3xl font-black">R$ 0,00</h2>
-                            <div class="mt-4 flex justify-between items-center">
-                                <div><p class="text-[10px] opacity-80">Valor atual</p><p id="totalAtualMP" class="text-xl font-bold">R$ 0,00</p></div>
-                                <div class="text-right"><p class="text-[10px] opacity-80">Rendimento</p><p id="totalRendimentoMP" class="text-xl font-bold">R$ 0,00</p></div>
-                            </div>
-                            <div class="mt-3 pt-3 border-t border-white/20"><p class="text-[10px] opacity-80">Rentabilidade total</p><p id="rentabilidadeTotalMP" class="text-lg font-bold">0,00%</p></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="abrirModalInvestimento()" class="bg-emerald-600 text-white p-4 rounded-2xl font-bold text-xs uppercase hover:bg-emerald-700 transition shadow-lg flex items-center justify-center gap-2">➕ INVESTIR</button>
-                            <button onclick="atualizarRendimentosDiarios()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white p-4 rounded-2xl font-bold text-xs uppercase hover:bg-slate-300 transition flex items-center justify-center gap-2">🔄 ATUALIZAR</button>
-                        </div>
-                        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border">
-                            <p class="text-xs font-bold text-emerald-600 mb-2">📈 Como funciona?</p>
-                            <p class="text-[10px] text-slate-500 leading-relaxed">Os rendimentos são calculados diariamente com base no CDI atual (13,15% a.a.). O valor é atualizado automaticamente a cada 6 horas.</p>
-                        </div>
-                    </div>
-                    <!-- Lista de Investimentos -->
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border overflow-hidden">
-                        <div class="p-5 border-b flex justify-between items-center">
-                            <h3 class="font-bold flex items-center gap-2">📈 SEUS INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[8px] bg-slate-100 px-2 py-1 rounded-full">0</span></h3>
-                            <button onclick="abrirModalInvestimento()" class="text-[10px] text-emerald-500 font-bold">+ Novo</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="text-slate-400 text-[10px] border-b bg-slate-50 dark:bg-slate-800/50">
-                                    <tr><th class="py-3 px-3 text-left">Investimento</th><th class="py-3 text-right">Valor</th><th class="py-3 text-right">Rendimento</th><th class="py-3 text-right">Datas</th><th class="py-3 w-8"></th></tr>
-                                </thead>
-                                <tbody id="investTableBodyMP" class="divide-y"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+// ==================== TRANSAÇÕES ====================
+function adicionar() {
+    const editId = document.getElementById('editId').value;
+    const desc = document.getElementById('inDesc').value.trim();
+    const val = parseFloat(document.getElementById('inVal').value);
+    const tipo = document.getElementById('inType').value;
+    const cat = document.getElementById('inCat').value;
+    const met = document.getElementById('inMeth').value;
+    const mesNome = document.getElementById('inMonth').value;
+    const ano = parseInt(document.getElementById('inYear').value);
+    if (!desc || desc.length < 3) return showToast('Descrição deve ter 3+ caracteres', 'error');
+    if (isNaN(val) || val <= 0) return showToast('Valor inválido', 'error');
+    if (!cat || !met) return showToast('Selecione categoria e método', 'error');
 
-    <!-- Modal para Adicionar/Editar Investimento -->
-    <div id="modalInvestimento" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) fecharModalInvestimento()">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b flex justify-between items-center">
-                <h3 id="formTitleInvestMP" class="font-bold">💰 NOVO INVESTIMENTO</h3>
-                <button onclick="fecharModalInvestimento()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
-            </div>
-            <div class="p-5 space-y-4">
-                <input type="hidden" id="editIdInvestMP">
-                <input id="inNomeInvest" type="text" placeholder="Nome do investimento (ex: CDB Mercado Livre)" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm">
-                <div class="grid grid-cols-2 gap-3">
-                    <select id="inTipoInvestMP" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm"><option value="Renda Fixa">💰 Renda Fixa</option><option value="Fundos">📊 Fundos</option><option value="Ações">📈 Ações</option></select>
-                    <input id="inValorAplicado" type="number" placeholder="Valor aplicado" step="0.01" class="p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] text-slate-400 block mb-1">Rendimento (% do CDI)</label><input id="inRendimentoPercentual" type="number" placeholder="106" step="0.1" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm"></div>
-                    <div><label class="text-[10px] text-slate-400 block mb-1">Resgate</label><input id="inResgate" type="text" placeholder="Ex: Em 6 meses" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] text-slate-400 block mb-1">Data da aplicação</label><input id="inDataAplicacao" type="date" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm"></div>
-                    <div><label class="text-[10px] text-slate-400 block mb-1">Data de vencimento</label><input id="inDataVencimento" type="date" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border rounded-2xl text-sm"></div>
-                </div>
-                <div class="flex gap-4 items-center">
-                    <label class="flex items-center gap-2 text-sm"><input id="inResgateImediato" type="checkbox" class="w-4 h-4"><span class="text-xs">🔓 Resgate imediato</span></label>
-                    <label class="flex items-center gap-2 text-sm"><input id="inGarantiaFGC" type="checkbox" checked class="w-4 h-4"><span class="text-xs">✓ Garantia FGC</span></label>
-                </div>
-                <button onclick="adicionarInvestimentoMP()" id="btnSaveInvestMP" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest">💾 SALVAR INVESTIMENTO</button>
-                <button id="btnCancelEditInvestMP" onclick="resetFormInvestMP()" class="hidden w-full mt-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-3 rounded-xl text-[9px] uppercase">← Cancelar Edição</button>
-            </div>
-        </div>
-    </div>
+    if (editId) {
+        const idx = dados.transacoes.findIndex(t => String(t.id) === String(editId));
+        if (idx !== -1) {
+            dados.transacoes[idx] = { ...dados.transacoes[idx], tipo, desc, valor: val, categoria: cat, metodo: met, mesIdx: MESES.indexOf(mesNome), ano };
+            showToast('Atualizado', 'success');
+            resetForm();
+            syncToCloud();
+        }
+    } else {
+        const parc = parseInt(document.getElementById('inParc').value) || 1;
+        if (parc > 24) return showToast('Máx 24 parcelas', 'error');
+        const startIdx = MESES.indexOf(mesNome);
+        for (let i = 0; i < parc; i++) {
+            const curIdx = startIdx + i;
+            dados.transacoes.push({
+                id: Date.now() + i + Math.random().toString(36).substr(2, 9),
+                tipo, desc, valor: val / parc, categoria: cat, metodo: met,
+                parc: parc > 1 ? `${i+1}/${parc}` : '', parcTotal: parc > 1 ? parc : null,
+                parcAtual: parc > 1 ? i+1 : null, descOriginal: parc > 1 ? desc : null,
+                mesIdx: curIdx % 12, ano: ano + Math.floor(curIdx / 12), pago: false, criadoEm: new Date().toISOString()
+            });
+        }
+        document.getElementById('inDesc').value = '';
+        document.getElementById('inVal').value = '';
+        document.getElementById('inParc').value = '';
+        showToast(`${parc} registro(s) adicionado(s)`, 'success');
+        syncToCloud();
+    }
+}
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="app.js"></script>
+function excluir(id) {
+    if (confirm("Excluir este registro?")) {
+        dados.transacoes = dados.transacoes.filter(t => String(t.id) !== String(id));
+        syncToCloud();
+        showToast('Excluído', 'success');
+    }
+}
+function togglePago(id) {
+    const t = dados.transacoes.find(x => String(x.id) === String(id));
+    if (t) { t.pago = !t.pago; syncToCloud(); showToast(t.pago ? '✅ Pago' : '⏳ Pendente', 'info'); }
+}
+function excluirTodasParcelas(descOriginal, parcTotal) {
+    const toDelete = dados.transacoes.filter(t => t.descOriginal === descOriginal && t.parcTotal === parcTotal);
+    if (toDelete.length === 0) return;
+    if (confirm(`Excluir TODAS as ${toDelete.length} parcelas da despesa "${descOriginal}"?`)) {
+        dados.transacoes = dados.transacoes.filter(t => !(t.descOriginal === descOriginal && t.parcTotal === parcTotal));
+        syncToCloud();
+        showToast(`${toDelete.length} parcelas excluídas`, 'success');
+    }
+}
 
-    <!-- Firebase (substitua pelas suas credenciais) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const firebaseConfig = {
-            apiKey: "AIzaSyCBiRF-ISTjYVBv6F1TtCNGpfYWChExVtI",
-            authDomain: "meufinanceiro-75b8e.firebaseapp.com",
-            projectId: "meufinanceiro-75b8e",
-            storageBucket: "meufinanceiro-75b8e.firebasestorage.app",
-            messagingSenderId: "1083437842303",
-            appId: "1:1083437842303:web:0c6f76428a738aedffa44a"
-        };
-        const app = initializeApp(firebaseConfig);
-        window.auth = getAuth(app);
-        window.db = getFirestore(app);
-        window.fb_funcs = { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, doc, setDoc, getDoc };
-    </script>
-</body>
-</html>
+// ==================== RENDER TRANSAÇÕES ====================
+function renderTransacoes() {
+    const mIdx = MESES.indexOf(document.getElementById('fMonth').value);
+    const yVal = parseInt(document.getElementById('fYear').value);
+    const search = filtroBusca.toLowerCase();
+    let filtrados = dados.transacoes.filter(t => t.mesIdx === mIdx && t.ano === yVal);
+    if (search) filtrados = filtrados.filter(t => t.desc.toLowerCase().includes(search) || t.categoria.toLowerCase().includes(search) || t.metodo.toLowerCase().includes(search));
+    const receitas = filtrados.filter(t => t.tipo === 'income');
+    const despesas = filtrados.filter(t => t.tipo === 'expense');
+    const inc = receitas.reduce((s, t) => s + t.valor, 0);
+    const exp = despesas.reduce((s, t) => s + t.valor, 0);
+    const saldo = inc - exp;
+    document.getElementById('totalBalance').innerText = saldo.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('totalBalance').className = `text-4xl font-black ${saldo>0?'text-emerald-500':saldo<0?'text-rose-500':'text-slate-900 dark:text-white'}`;
+    document.getElementById('totalReceitas').innerText = inc.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('totalDespesas').innerText = exp.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('contadorRegistros').innerText = filtrados.length;
+    const tbody = document.getElementById('tableBody');
+    if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td></tr>';
+        return;
+    }
+    let html = '';
+    let gruposParcelas = {};
+    if (receitas.length) {
+        html += `<tr class="bg-emerald-50 dark:bg-emerald-900/20"><td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">💰 RECEITAS</td></tr>`;
+        receitas.forEach(t => {
+            const idSeguro = String(t.id).replace(/'/g, "\\'");
+            const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
+            html += `<tr class="border-b hover:bg-slate-50">
+                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
+                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
+                <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
+            </tr>`;
+            if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
+        });
+    }
+    if (despesas.length) {
+        html += `<tr class="bg-rose-50 dark:bg-rose-900/20"><td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">📉 DESPESAS</td></tr>`;
+        gruposParcelas = {};
+        despesas.forEach(t => {
+            const idSeguro = String(t.id).replace(/'/g, "\\'");
+            const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
+            html += `<tr class="border-b hover:bg-slate-50">
+                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
+                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
+                <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
+            </tr>`;
+            if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
+        });
+    }
+    tbody.innerHTML = html;
+}
+
+// ==================== INVESTIMENTOS (estilo Mercado Pago) ====================
+function adicionarInvestimentoMP() {
+    const editId = document.getElementById('editIdInvestMP').value;
+    const nome = document.getElementById('inNomeInvest').value.trim();
+    const tipo = document.getElementById('inTipoInvestMP').value;
+    const valorAplicado = parseFloat(document.getElementById('inValorAplicado').value);
+    const rendimentoPercentual = parseFloat(document.getElementById('inRendimentoPercentual').value);
+    const dataAplicacao = document.getElementById('inDataAplicacao').value;
+    const dataVencimento = document.getElementById('inDataVencimento').value;
+    const resgate = document.getElementById('inResgate').value;
+    const resgateImediato = document.getElementById('inResgateImediato').checked;
+    const garantiaFGC = document.getElementById('inGarantiaFGC').checked;
+
+    if (!nome || nome.length < 3) return showToast('Nome do investimento inválido', 'error');
+    if (isNaN(valorAplicado) || valorAplicado <= 0) return showToast('Valor aplicado inválido', 'error');
+    if (isNaN(rendimentoPercentual) || rendimentoPercentual <= 0) return showToast('Rendimento inválido', 'error');
+
+    const hoje = new Date();
+    const dataAplic = new Date(dataAplicacao);
+    const dataVenc = dataVencimento ? new Date(dataVencimento) : null;
+    let diasDecorridos = 0, diasTotais = 0;
+    let valorAtual = valorAplicado;
+    let rentabilidadeAtual = 0;
+    if (dataVenc && hoje > dataAplic) {
+        diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
+        diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
+        const taxaCDIAnual = 13.15 / 100;
+        const taxaDiaria = Math.pow(1 + taxaCDIAnual, 1/252) - 1;
+        const rendDiario = taxaDiaria * (rendimentoPercentual / 100);
+        const fator = Math.pow(1 + rendDiario, diasDecorridos);
+        valorAtual = valorAplicado * fator;
+        rentabilidadeAtual = ((valorAtual / valorAplicado) - 1) * 100;
+    }
+
+    const invest = {
+        id: editId || (Date.now() + Math.random().toString(36).substr(2,9)),
+        nome: nome.toUpperCase(),
+        tipo, valorAplicado, valorAtual, rendimentoPercentual,
+        dataAplicacao, dataVencimento: dataVencimento || null, resgate, resgateImediato, garantiaFGC,
+        rentabilidadeAtual, criadoEm: new Date().toISOString(), ultimaAtualizacao: new Date().toISOString()
+    };
+
+    if (editId) {
+        const idx = dados.investimentosMP.findIndex(t => String(t.id) === String(editId));
+        if (idx !== -1) dados.investimentosMP[idx] = { ...dados.investimentosMP[idx], ...invest };
+        showToast('Investimento atualizado', 'success');
+    } else {
+        dados.investimentosMP.push(invest);
+        showToast('Investimento adicionado', 'success');
+    }
+    syncToCloud();
+    fecharModalInvestimento();
+}
+
+function atualizarRendimentosDiarios() {
+    let atualizado = false;
+    const hoje = new Date();
+    const taxaCDIAnual = 13.15 / 100;
+    const taxaDiaria = Math.pow(1 + taxaCDIAnual, 1/252) - 1;
+    (dados.investimentosMP || []).forEach(inv => {
+        const dataAplic = new Date(inv.dataAplicacao);
+        const dataVenc = inv.dataVencimento ? new Date(inv.dataVencimento) : null;
+        if (dataVenc && hoje > dataAplic && hoje < dataVenc) {
+            const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
+            const diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
+            const rendDiario = taxaDiaria * (inv.rendimentoPercentual / 100);
+            const fator = Math.pow(1 + rendDiario, diasDecorridos);
+            const novoValor = inv.valorAplicado * fator;
+            const novaRent = ((novoValor / inv.valorAplicado) - 1) * 100;
+            if (Math.abs(novoValor - inv.valorAtual) > 0.01) {
+                inv.valorAtual = novoValor;
+                inv.rentabilidadeAtual = novaRent;
+                inv.ultimaAtualizacao = hoje.toISOString();
+                atualizado = true;
+            }
+        }
+    });
+    if (atualizado) {
+        syncToCloud();
+        showToast('💰 Rendimentos atualizados!', 'success');
+    } else {
+        showToast('Nenhuma atualização necessária', 'info');
+    }
+}
+
+function renderInvestimentosMP() {
+    const investimentos = dados.investimentosMP || [];
+    const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
+    const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
+    const totalRend = totalAtual - totalInvestido;
+    const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
+
+    document.getElementById('totalInvestidoMP').innerText = totalInvestido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('totalAtualMP').innerText = totalAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    const rendEl = document.getElementById('totalRendimentoMP');
+    rendEl.innerText = totalRend.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    rendEl.className = `font-bold ${totalRend>=0?'text-emerald-500':'text-rose-500'}`;
+    document.getElementById('rentabilidadeTotalMP').innerHTML = `${rentTotal>=0?'+':''}${rentTotal.toFixed(2)}%`;
+    document.getElementById('contadorInvestimentosMP').innerText = investimentos.length;
+
+    const tbody = document.getElementById('investTableBodyMP');
+    if (!tbody) return;
+    if (investimentos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
+        return;
+    }
+    tbody.innerHTML = investimentos.map(t => {
+        const idSeguro = String(t.id).replace(/'/g, "\\'");
+        const dataVenc = t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : 'Sem vencimento';
+        const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
+        const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        return `
+        <tr class="border-b hover:bg-slate-50 cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
+            <td class="py-4 px-3"><div class="font-bold">${t.nome}</div><div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div></td>
+            <td class="py-4 text-right"><div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div></td>
+            <td class="py-4 text-right"><div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div><div class="text-[9px] text-slate-400">${resgateInfo}</div></td>
+            <td class="py-4 text-right"><div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div><div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div></td>
+            <td class="text-right px-2"><button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
+        </tr>`;
+    }).join('');
+}
+
+function abrirModalInvestimento() {
+    const modal = document.getElementById('modalInvestimento');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); resetFormInvestMP(); }
+}
+function fecharModalInvestimento() {
+    const modal = document.getElementById('modalInvestimento');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+function resetFormInvestMP() {
+    document.getElementById('editIdInvestMP').value = '';
+    document.getElementById('inNomeInvest').value = '';
+    document.getElementById('inTipoInvestMP').value = 'Renda Fixa';
+    document.getElementById('inValorAplicado').value = '';
+    document.getElementById('inRendimentoPercentual').value = '';
+    document.getElementById('inDataAplicacao').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inDataVencimento').value = '';
+    document.getElementById('inResgate').value = '';
+    document.getElementById('inResgateImediato').checked = false;
+    document.getElementById('inGarantiaFGC').checked = true;
+    document.getElementById('btnSaveInvestMP').innerText = '💾 SALVAR INVESTIMENTO';
+    document.getElementById('btnCancelEditInvestMP').classList.add('hidden');
+}
+function prepararEdicaoInvestMP(id) {
+    const t = dados.investimentosMP.find(x => String(x.id) === String(id));
+    if (!t) return showToast('Erro ao carregar investimento', 'error');
+    document.getElementById('editIdInvestMP').value = t.id;
+    document.getElementById('inNomeInvest').value = t.nome;
+    document.getElementById('inTipoInvestMP').value = t.tipo;
+    document.getElementById('inValorAplicado').value = t.valorAplicado;
+    document.getElementById('inRendimentoPercentual').value = t.rendimentoPercentual;
+    document.getElementById('inDataAplicacao').value = t.dataAplicacao;
+    document.getElementById('inDataVencimento').value = t.dataVencimento || '';
+    document.getElementById('inResgate').value = t.resgate || '';
+    document.getElementById('inResgateImediato').checked = t.resgateImediato || false;
+    document.getElementById('inGarantiaFGC').checked = t.garantiaFGC !== false;
+    document.getElementById('btnSaveInvestMP').innerText = '🔄 ATUALIZAR';
+    document.getElementById('btnCancelEditInvestMP').classList.remove('hidden');
+    abrirModalInvestimento();
+}
+function excluirInvestimentoMP(id) {
+    if (confirm("Excluir este investimento?")) {
+        dados.investimentosMP = dados.investimentosMP.filter(t => String(t.id) !== String(id));
+        syncToCloud();
+        showToast('Investimento excluído', 'success');
+    }
+}
+
+// ==================== RENDER PRINCIPAL ====================
+function render() {
+    if (activeTab === 'transacoes') renderTransacoes();
+    else renderInvestimentosMP();
+    const updateSelect = (id, list) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const val = el.value;
+            el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+            if (list.includes(val)) el.value = val;
+        }
+    };
+    updateSelect('inCat', dados.categorias);
+    updateSelect('inMeth', dados.metodos);
+}
+
+function initDateFilters() {
+    const now = new Date();
+    ['inMonth', 'fMonth'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '';
+            MESES.forEach(m => el.innerHTML += `<option value="${m}">${m}</option>`);
+            el.value = MESES[now.getMonth()];
+        }
+    });
+    document.getElementById('fYear').value = document.getElementById('inYear').value = now.getFullYear();
+    const dataCompra = document.getElementById('inDataAplicacao');
+    if (dataCompra) dataCompra.value = now.toISOString().split('T')[0];
+}
+function filtrarTabela(texto) { filtroBusca = texto; render(); }
+
+function resetForm() {
+    document.getElementById('editId').value = '';
+    document.getElementById('inDesc').value = '';
+    document.getElementById('inVal').value = '';
+    document.getElementById('inParc').value = '';
+    document.getElementById('inParc').disabled = false;
+    document.getElementById('formTitle').innerText = "➕ NOVO REGISTRO";
+    document.getElementById('btnSave').innerText = "💾 SALVAR NA NUVEM";
+    document.getElementById('btnCancelEdit').classList.add('hidden');
+    document.getElementById('inType').value = 'expense';
+    const now = new Date();
+    document.getElementById('inMonth').value = MESES[now.getMonth()];
+    document.getElementById('inYear').value = now.getFullYear();
+}
+function prepararEdicao(id) {
+    const t = dados.transacoes.find(x => String(x.id) === String(id));
+    if (!t) return showToast('Erro ao carregar', 'error');
+    document.getElementById('editId').value = t.id;
+    document.getElementById('inType').value = t.tipo;
+    document.getElementById('inDesc').value = t.desc;
+    document.getElementById('inVal').value = t.valor;
+    document.getElementById('inParc').disabled = true;
+    document.getElementById('inCat').value = t.categoria;
+    document.getElementById('inMeth').value = t.metodo;
+    document.getElementById('inMonth').value = MESES[t.mesIdx];
+    document.getElementById('inYear').value = t.ano;
+    document.getElementById('formTitle').innerText = "✏️ EDITANDO REGISTRO";
+    document.getElementById('btnSave').innerText = "🔄 ATUALIZAR";
+    document.getElementById('btnCancelEdit').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('✏️ Modo edição ativado', 'info');
+}
+
+// ==================== PDF ====================
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    if (activeTab === 'transacoes') {
+        const mes = document.getElementById('fMonth').value;
+        const ano = document.getElementById('fYear').value;
+        const mIdx = MESES.indexOf(mes);
+        const transacoes = dados.transacoes.filter(t => t.mesIdx === mIdx && t.ano === parseInt(ano));
+        const receitas = transacoes.filter(t => t.tipo === 'income');
+        const despesas = transacoes.filter(t => t.tipo === 'expense');
+        const totalRec = receitas.reduce((s,t)=>s+t.valor,0);
+        const totalDes = despesas.reduce((s,t)=>s+t.valor,0);
+        doc.setFontSize(20); doc.setTextColor(0,150,100); doc.text('Relatório de Transações',20,20);
+        doc.setFontSize(12); doc.setTextColor(100); doc.text(`${mes} ${ano}`,20,30);
+        doc.setFontSize(14); doc.setTextColor(0); doc.text('Resumo do Período',20,45);
+        doc.autoTable({ startY:50, head:[['Descrição','Valor']], body:[['Total Receitas',`R$ ${totalRec.toFixed(2)}`],['Total Despesas',`R$ ${totalDes.toFixed(2)}`],['Saldo',`R$ ${(totalRec-totalDes).toFixed(2)}`]], theme:'striped', headStyles:{fillColor:[16,185,129]} });
+        doc.text('Detalhamento',20,doc.lastAutoTable.finalY+15);
+        doc.autoTable({ startY:doc.lastAutoTable.finalY+20, head:[['Descrição','Categoria','Método','Valor','Status']], body:transacoes.map(t=>[t.desc+(t.parc?` (${t.parc})`:''),t.categoria,t.metodo,`R$ ${t.valor.toFixed(2)}`,t.pago?'Pago':'Pendente']), theme:'striped', headStyles:{fillColor:[59,130,246]} });
+        doc.save(`transacoes-${mes}-${ano}.pdf`);
+    } else {
+        const inv = dados.investimentosMP || [];
+        const totalInv = inv.reduce((s,t)=>s+t.valorAplicado,0);
+        const totalAtual = inv.reduce((s,t)=>s+t.valorAtual,0);
+        const totalLucro = totalAtual - totalInv;
+        const rent = totalInv>0?(totalLucro/totalInv)*100:0;
+        doc.setFontSize(20); doc.setTextColor(0,150,100); doc.text('Relatório de Investimentos',20,20);
+        doc.setFontSize(14); doc.setTextColor(0); doc.text('Resumo da Carteira',20,35);
+        doc.autoTable({ startY:40, head:[['Descrição','Valor']], body:[['Total Investido',`R$ ${totalInv.toFixed(2)}`],['Valor Atual',`R$ ${totalAtual.toFixed(2)}`],['Lucro/Prejuízo',`R$ ${totalLucro.toFixed(2)}`],['Rentabilidade',`${rent>=0?'+':''}${rent.toFixed(2)}%`]], theme:'striped', headStyles:{fillColor:[16,185,129]} });
+        doc.text('Detalhamento',20,doc.lastAutoTable.finalY+15);
+        doc.autoTable({ startY:doc.lastAutoTable.finalY+20, head:[['Ativo','Tipo','Corretora','Quant.','P.Médio','P.Atual','Total','Lucro','Rent.']], body:inv.map(t=>[t.nome,t.tipo,'Mercado Pago','1',`R$ ${t.valorAplicado.toFixed(2)}`,`R$ ${t.valorAtual.toFixed(2)}`,`R$ ${t.valorAtual.toFixed(2)}`,`R$ ${(t.valorAtual-t.valorAplicado).toFixed(2)}`,`${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%`]), theme:'striped', headStyles:{fillColor:[59,130,246]} });
+        doc.save(`investimentos-${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+    showToast('PDF gerado!', 'success');
+}
+
+// ==================== ATALHOS ====================
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey||e.metaKey) && e.key === 'n') { e.preventDefault(); if(activeTab==='transacoes'){ resetForm(); document.getElementById('inDesc').focus(); } else { resetFormInvestMP(); document.getElementById('inNomeInvest').focus(); abrirModalInvestimento(); } showToast('Novo registro','info'); }
+        if (e.key === 'Escape') { if(activeTab==='transacoes' && document.getElementById('editId').value) resetForm(); else if(activeTab!=='transacoes' && document.getElementById('editIdInvestMP').value) resetFormInvestMP(); showToast('Edição cancelada','info'); }
+        if ((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); if(currentUser) syncToCloud(); }
+        if (e.altKey && e.key === '1') { e.preventDefault(); mudarAba('transacoes'); }
+        if (e.altKey && e.key === '2') { e.preventDefault(); mudarAba('investimentos'); }
+    });
+}
+
+function iniciarAtualizacaoAutomatica() {
+    setTimeout(() => atualizarRendimentosDiarios(), 1000);
+    setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
+}
+
+// Exportações para o HTML
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
+window.handleLogout = handleLogout;
+window.toggleDarkMode = toggleDarkMode;
+window.adicionar = adicionar;
+window.excluir = excluir;
+window.togglePago = togglePago;
+window.prepararEdicao = prepararEdicao;
+window.resetForm = resetForm;
+window.render = render;
+window.exportarPDF = exportarPDF;
+window.filtrarTabela = filtrarTabela;
+window.addItemLista = addItemLista;
+window.mostrarCadastro = mostrarCadastro;
+window.mostrarLogin = mostrarLogin;
+window.mudarAba = mudarAba;
+window.adicionarInvestimentoMP = adicionarInvestimentoMP;
+window.atualizarRendimentosDiarios = atualizarRendimentosDiarios;
+window.abrirModalInvestimento = abrirModalInvestimento;
+window.fecharModalInvestimento = fecharModalInvestimento;
+window.resetFormInvestMP = resetFormInvestMP;
+window.prepararEdicaoInvestMP = prepararEdicaoInvestMP;
+window.excluirInvestimentoMP = excluirInvestimentoMP;
+window.excluirTodasParcelas = excluirTodasParcelas;
