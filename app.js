@@ -4,7 +4,6 @@ let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
-// Dados padrão iniciais
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -14,10 +13,8 @@ const dadosPadrao = {
     corretoras: ['MERCADO PAGO', 'NU INVEST', 'XP INC']
 };
 
-// Dados atuais em memória
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
-// ==================== FUNÇÕES GLOBAIS ====================
 function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -72,12 +69,10 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
-        // Força renderização dos investimentos ao mudar para a aba
         setTimeout(() => renderInvestimentosMP(), 100);
     }
 }
 
-// ==================== AUTENTICAÇÃO ====================
 window.addEventListener('load', () => {
     window.fb_funcs.onAuthStateChanged(window.auth, (user) => {
         if (user) {
@@ -124,16 +119,9 @@ async function handleSignup() {
     try {
         const userCred = await window.fb_funcs.createUserWithEmailAndPassword(window.auth, email, pass);
         await window.fb_funcs.updateProfile(userCred.user, { displayName: nome });
-        
-        const novoDoc = {
-            ...dadosPadrao,
-            nome: nome,
-            email: email,
-            criadoEm: new Date().toISOString()
-        };
+        const novoDoc = { ...dadosPadrao, nome: nome, email: email, criadoEm: new Date().toISOString() };
         const docRef = window.fb_funcs.doc(window.db, "users", userCred.user.uid);
         await window.fb_funcs.setDoc(docRef, novoDoc);
-        
         showToast('Cadastro realizado!', 'success');
         mostrarLogin();
     } catch (err) { showToast('Erro ao cadastrar', 'error'); }
@@ -145,7 +133,6 @@ function handleLogout() {
     showToast('Até logo!', 'info');
 }
 
-// ==================== SINC. NUVEM ====================
 async function loadFromCloud() {
     if (!currentUser) return;
     showLoading(true);
@@ -158,16 +145,10 @@ async function loadFromCloud() {
             dados.investimentosMP = d.investimentosMP || [];
             dados.categorias = d.categorias || dadosPadrao.categorias;
             dados.metodos = d.metodos || dadosPadrao.metodos;
-            
-            // Atualiza os selects
+            dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            
-            // Renderiza baseado na aba atual
-            if (activeTab === 'transacoes') {
-                renderTransacoes();
-            } else {
-                renderInvestimentosMP();
-            }
+            if (activeTab === 'transacoes') renderTransacoes();
+            else renderInvestimentosMP();
         } else {
             await syncToCloud();
         }
@@ -180,11 +161,8 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        if (activeTab === 'transacoes') {
-            renderTransacoes();
-        } else {
-            renderInvestimentosMP();
-        }
+        if (activeTab === 'transacoes') renderTransacoes();
+        else renderInvestimentosMP();
         showToast('Dados salvos ☁️', 'success');
     } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
 }
@@ -215,7 +193,6 @@ function updateSelects() {
     updateSelect('inTipoInvestMP', dados.tiposInvestimento);
 }
 
-// ==================== CATEGORIAS/MÉTODOS ====================
 async function addItemLista(tipo, inputId) {
     const input = document.getElementById(inputId);
     const valor = input.value.trim().toUpperCase();
@@ -227,7 +204,6 @@ async function addItemLista(tipo, inputId) {
     showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
 }
 
-// ==================== TRANSAÇÕES ====================
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -292,7 +268,6 @@ function excluirTodasParcelas(descOriginal, parcTotal) {
     }
 }
 
-// ==================== RENDER TRANSAÇÕES ====================
 function renderTransacoes() {
     const mIdx = MESES.indexOf(document.getElementById('fMonth').value);
     const yVal = parseInt(document.getElementById('fYear').value);
@@ -311,7 +286,7 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td></tr>';
         return;
     }
     let html = '';
@@ -326,7 +301,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -341,14 +316,13 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+             </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
     tbody.innerHTML = html;
 }
 
-// ==================== INVESTIMENTOS ====================
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -452,7 +426,6 @@ function renderInvestimentosMP() {
     const totalRend = totalAtual - totalInvestido;
     const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
 
-    // Atualiza os cards de resumo
     const totalInvestidoEl = document.getElementById('totalInvestidoMP');
     const totalAtualEl = document.getElementById('totalAtualMP');
     const totalRendimentoEl = document.getElementById('totalRendimentoMP');
@@ -554,13 +527,9 @@ function excluirInvestimentoMP(id) {
     }
 }
 
-// ==================== RENDER PRINCIPAL ====================
 function render() {
-    if (activeTab === 'transacoes') {
-        renderTransacoes();
-    } else {
-        renderInvestimentosMP();
-    }
+    if (activeTab === 'transacoes') renderTransacoes();
+    else renderInvestimentosMP();
     updateSelects();
 }
 
@@ -613,7 +582,6 @@ function prepararEdicao(id) {
     showToast('✏️ Modo edição ativado', 'info');
 }
 
-// ==================== PDF ====================
 function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -649,7 +617,6 @@ function exportarPDF() {
     showToast('PDF gerado!', 'success');
 }
 
-// ==================== ATALHOS ====================
 function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey||e.metaKey) && e.key === 'n') { e.preventDefault(); if(activeTab==='transacoes'){ resetForm(); document.getElementById('inDesc').focus(); } else { resetFormInvestMP(); document.getElementById('inNomeInvest').focus(); abrirModalInvestimento(); } showToast('Novo registro','info'); }
@@ -665,7 +632,6 @@ function iniciarAtualizacaoAutomatica() {
     setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
 }
 
-// Exportações para o HTML
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
@@ -691,5 +657,4 @@ window.prepararEdicaoInvestMP = prepararEdicaoInvestMP;
 window.excluirInvestimentoMP = excluirInvestimentoMP;
 window.excluirTodasParcelas = excluirTodasParcelas;
 
-// Inicia atualização automática após carregar dados
 setTimeout(() => { if (currentUser) iniciarAtualizacaoAutomatica(); }, 2000);
