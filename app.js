@@ -149,13 +149,15 @@ async function loadFromCloud() {
             dados.categorias = d.categorias || dadosPadrao.categorias;
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
-            updateSelects();
-            console.log('✅ Dados carregados do Firestore. Investimentos:', dados.investimentosMP.length);
-            render();
-        } else {
-            await syncToCloud();
+            uupdateSelects();
+            render(); // Atualiza transações
+            renderInvestimentosMP(); // ADICIONE ESTA LINHA para carregar investimentos
         }
-    } catch (err) { console.error('Erro no loadFromCloud:', err); showToast('Erro ao carregar dados', 'error'); } finally { showLoading(false); }
+    } catch (err) { 
+        console.error('Erro no loadFromCloud:', err); 
+    } finally { 
+        showLoading(false); 
+    }
 }
 
 async function syncToCloud() {
