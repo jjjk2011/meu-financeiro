@@ -270,7 +270,7 @@ function renderTransacoes() {
         receitas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
             const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
-            html += `<tr class="border-b hover:bg-slate-50">
+            html += `<tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
@@ -285,7 +285,7 @@ function renderTransacoes() {
         despesas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
             const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
-            html += `<tr class="border-b hover:bg-slate-50">
+            html += `<tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
@@ -409,7 +409,7 @@ function renderInvestimentosMP() {
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
         const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
         return `
-        <tr class="border-b hover:bg-slate-50 cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
+        <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3"><div class="font-bold">${t.nome}</div><div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div></td>
             <td class="py-4 text-right"><div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div></td>
             <td class="py-4 text-right"><div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div><div class="text-[9px] text-slate-400">${resgateInfo}</div></td>
@@ -608,3 +608,6 @@ window.resetFormInvestMP = resetFormInvestMP;
 window.prepararEdicaoInvestMP = prepararEdicaoInvestMP;
 window.excluirInvestimentoMP = excluirInvestimentoMP;
 window.excluirTodasParcelas = excluirTodasParcelas;
+
+// Inicia atualização automática após carregar dados
+setTimeout(() => { if (currentUser) iniciarAtualizacaoAutomatica(); }, 2000);
