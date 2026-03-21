@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Finance Pro</title>
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#10b981">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -33,7 +32,6 @@
             color: #f1f5f9; /* dark:text-slate-100 */
             border-color: #334155;
         }
-        /* Opções do dropdown (no Chrome/Edge) */
         select option {
             background-color: #f9fafb;
             color: #111827;
@@ -42,7 +40,6 @@
             background-color: #1e293b;
             color: #f1f5f9;
         }
-        /* Inputs do tipo date */
         input[type="date"] {
             background-color: #f9fafb;
             color: #111827;
@@ -51,23 +48,14 @@
             background-color: #1e293b;
             color: #f1f5f9;
         }
-        /* Placeholders */
         ::placeholder {
             color: #9ca3af;
         }
         .dark ::placeholder {
             color: #6b7280;
         }
-        /* Para garantir que botões não sejam afetados */
         button {
             background-color: transparent;
-        }
-        /* Ajustes adicionais para o modal */
-        .modal-content {
-            background-color: white;
-        }
-        .dark .modal-content {
-            background-color: #0f172a;
         }
     </style>
 </head>
@@ -225,7 +213,7 @@
                                 <thead class="text-slate-400 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                                     <tr><th class="py-3 px-3 font-medium">Investimento</th><th class="py-3 text-right font-medium">Valor</th><th class="py-3 text-right font-medium">Rendimento</th><th class="py-3 text-right font-medium">Datas</th><th class="py-3 w-8"></th> </thead>
                                 <tbody id="investTableBodyMP" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                             </table>
+                              ·
                         </div>
                     </div>
                 </div>
