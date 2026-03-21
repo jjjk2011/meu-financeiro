@@ -4,7 +4,6 @@ let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
-// Estrutura de dados padrão (vazia)
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -14,7 +13,6 @@ const dadosPadrao = {
     corretoras: ['MERCADO PAGO', 'NU INVEST', 'XP INC']
 };
 
-// Dados em memória
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
 // ==================== FUNÇÕES AUXILIARES ====================
@@ -152,12 +150,12 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            console.log('✅ Dados carregados:', { investimentos: dados.investimentosMP.length });
+            console.log('✅ Dados carregados do Firestore. Investimentos:', dados.investimentosMP.length);
             render();
         } else {
             await syncToCloud();
         }
-    } catch (err) { console.error(err); } finally { showLoading(false); }
+    } catch (err) { console.error('Erro no loadFromCloud:', err); showToast('Erro ao carregar dados', 'error'); } finally { showLoading(false); }
 }
 
 async function syncToCloud() {
@@ -166,11 +164,11 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        console.log('✅ Dados salvos:', { investimentos: dados.investimentosMP.length });
+        console.log('✅ Dados salvos no Firestore. Investimentos:', dados.investimentosMP.length);
         render();
         showToast('Dados salvos ☁️', 'success');
     } catch (err) {
-        console.error(err);
+        console.error('Erro no syncToCloud:', err);
         showToast('Erro ao salvar', 'error');
     } finally {
         if (btn) btn.classList.remove('loading-btn');
@@ -214,7 +212,7 @@ async function addItemLista(tipo, inputId) {
     showToast(`${tipo === 'categorias' ? 'Categoria' : 'Método'} adicionado`, 'success');
 }
 
-// ==================== TRANSAÇÕES (resumido) ====================
+// ==================== TRANSAÇÕES ====================
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -297,7 +295,7 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td></tr>';
         return;
     }
     let html = '';
@@ -431,9 +429,8 @@ function atualizarRendimentosDiarios() {
 }
 
 function renderInvestimentosMP() {
-    console.log('Renderizando investimentos...');
     const investimentos = dados.investimentosMP || [];
-    console.log('Quantidade:', investimentos.length);
+    console.log('Renderizando investimentos, quantidade:', investimentos.length);
 
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
