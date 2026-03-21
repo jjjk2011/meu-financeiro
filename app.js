@@ -15,7 +15,6 @@ const dadosPadrao = {
 
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
-// ==================== FUNÇÕES GLOBAIS ====================
 function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -54,10 +53,12 @@ function mudarAba(aba) {
     activeTab = aba;
     const tabTrans = document.getElementById('tabTransacoes');
     const tabInv = document.getElementById('tabInvestimentos');
+    
     tabTrans.classList.remove('bg-emerald-600', 'text-white');
     tabInv.classList.remove('bg-emerald-600', 'text-white');
     tabTrans.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
     tabInv.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300');
+    
     if (aba === 'transacoes') {
         tabTrans.classList.add('bg-emerald-600', 'text-white');
         document.getElementById('areaTransacoes').style.display = 'block';
@@ -70,7 +71,12 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
-        setTimeout(() => renderInvestimentosMP(), 100);
+        // Força a renderização dos investimentos
+        setTimeout(() => {
+            if (document.getElementById('areaInvestimentos').style.display === 'block') {
+                renderInvestimentosMP();
+            }
+        }, 50);
     }
 }
 
@@ -148,8 +154,11 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            if (activeTab === 'transacoes') renderTransacoes();
-            else renderInvestimentosMP();
+            if (activeTab === 'transacoes') {
+                renderTransacoes();
+            } else {
+                renderInvestimentosMP();
+            }
         } else {
             await syncToCloud();
         }
@@ -162,8 +171,11 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        if (activeTab === 'transacoes') renderTransacoes();
-        else renderInvestimentosMP();
+        if (activeTab === 'transacoes') {
+            renderTransacoes();
+        } else {
+            renderInvestimentosMP();
+        }
         showToast('Dados salvos ☁️', 'success');
     } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
 }
@@ -303,7 +315,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -318,7 +330,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -472,7 +484,10 @@ function atualizarRendimentosDiarios() {
 }
 
 function renderInvestimentosMP() {
+    console.log('renderInvestimentosMP chamada');
     const investimentos = dados.investimentosMP || [];
+    console.log('Investimentos:', investimentos.length);
+    
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
     const totalRend = totalAtual - totalInvestido;
@@ -494,11 +509,16 @@ function renderInvestimentosMP() {
     if (contadorEl) contadorEl.innerText = investimentos.length;
 
     const tbody = document.getElementById('investTableBodyMP');
-    if (!tbody) return;
-    if (investimentos.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
+    if (!tbody) {
+        console.error('investTableBodyMP não encontrado');
         return;
     }
+    
+    if (investimentos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
+        return;
+    }
+    
     tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
         const dataVenc = t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : 'Sem vencimento';
@@ -506,11 +526,25 @@ function renderInvestimentosMP() {
         const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="abrirDetalhesInvestimento('${idSeguro}')">
-            <td class="py-4 px-3"><div class="font-bold text-sm">${t.nome}</div><div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div></td>
-            <td class="py-4 text-right"><div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div></td>
-            <td class="py-4 text-right"><div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div><div class="text-[9px] text-slate-400">${resgateInfo}</div></td>
-            <td class="py-4 text-right"><div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div><div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div></td>
-            <td class="text-right px-2"><button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
+            <td class="py-4 px-3">
+                <div class="font-bold text-sm">${t.nome}</div>
+                <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+                <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
+                <div class="text-[9px] text-slate-400">${resgateInfo}</div>
+            </td>
+            <td class="py-4 text-right">
+                <div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div>
+                <div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div>
+            </td>
+            <td class="text-right px-2">
+                <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
+            </td>
          </tr>`;
     }).join('');
 }
@@ -564,8 +598,11 @@ function excluirInvestimentoMP(id) {
 }
 
 function render() {
-    if (activeTab === 'transacoes') renderTransacoes();
-    else renderInvestimentosMP();
+    if (activeTab === 'transacoes') {
+        renderTransacoes();
+    } else {
+        renderInvestimentosMP();
+    }
     updateSelects();
 }
 
@@ -668,6 +705,7 @@ function iniciarAtualizacaoAutomatica() {
     setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
 }
 
+// Exportações para o HTML
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
