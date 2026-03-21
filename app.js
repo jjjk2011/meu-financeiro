@@ -431,6 +431,8 @@ function atualizarRendimentosDiarios() {
 }
 
 function renderInvestimentosMP() {
+    const corpo = document.getElementById('tabelaInvestimentosMP');
+    if (!corpo) return;
     const investimentos = dados.investimentosMP || [];
     console.log('Renderizando investimentos, quantidade:', investimentos.length);
 
@@ -704,6 +706,7 @@ window.addItemLista = addItemLista;
 window.mostrarCadastro = mostrarCadastro;
 window.mostrarLogin = mostrarLogin;
 window.mudarAba = mudarAba;
+window.renderInvestimentosMP = renderInvestimentosMP;
 window.adicionarInvestimentoMP = adicionarInvestimentoMP;
 window.atualizarRendimentosDiarios = atualizarRendimentosDiarios;
 window.abrirModalInvestimento = abrirModalInvestimento;
