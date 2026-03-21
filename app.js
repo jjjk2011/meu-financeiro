@@ -1,9 +1,10 @@
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 let currentUser = null;
 let filtroBusca = '';
 let toastTimeout = null;
 let activeTab = 'transacoes';
 
+// Dados padrão
 const dadosPadrao = {
     transacoes: [],
     investimentosMP: [],
@@ -15,6 +16,7 @@ const dadosPadrao = {
 
 let dados = JSON.parse(JSON.stringify(dadosPadrao));
 
+// ==================== FUNÇÕES GLOBAIS ====================
 function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -71,15 +73,15 @@ function mudarAba(aba) {
         document.getElementById('areaInvestimentos').style.display = 'block';
         resetFormInvestMP();
         render();
-        // Força a renderização dos investimentos
+        // Força a renderização com delay
         setTimeout(() => {
-            if (document.getElementById('areaInvestimentos').style.display === 'block') {
-                renderInvestimentosMP();
-            }
-        }, 50);
+            console.log('Forçando renderização dos investimentos');
+            renderInvestimentosMP();
+        }, 100);
     }
 }
 
+// ==================== AUTENTICAÇÃO ====================
 window.addEventListener('load', () => {
     window.fb_funcs.onAuthStateChanged(window.auth, (user) => {
         if (user) {
@@ -154,11 +156,7 @@ async function loadFromCloud() {
             dados.metodos = d.metodos || dadosPadrao.metodos;
             dados.tiposInvestimento = d.tiposInvestimento || dadosPadrao.tiposInvestimento;
             updateSelects();
-            if (activeTab === 'transacoes') {
-                renderTransacoes();
-            } else {
-                renderInvestimentosMP();
-            }
+            render();
         } else {
             await syncToCloud();
         }
@@ -171,11 +169,7 @@ async function syncToCloud() {
     if (btn) btn.classList.add('loading-btn');
     try {
         await window.fb_funcs.setDoc(window.fb_funcs.doc(window.db, "users", currentUser.uid), dados);
-        if (activeTab === 'transacoes') {
-            renderTransacoes();
-        } else {
-            renderInvestimentosMP();
-        }
+        render();
         showToast('Dados salvos ☁️', 'success');
     } catch (err) { showToast('Erro ao salvar', 'error'); } finally { if (btn) btn.classList.remove('loading-btn'); }
 }
@@ -338,57 +332,6 @@ function renderTransacoes() {
 }
 
 // ==================== INVESTIMENTOS ====================
-function calcularImpostos(valorAplicado, valorAtual, diasDecorridos) {
-    const rendimentoBruto = valorAtual - valorAplicado;
-    let iof = 0;
-    let ir = 0;
-    if (diasDecorridos <= 30) {
-        const aliquotaIOF = Math.max(0, 1 - (diasDecorridos / 30));
-        iof = rendimentoBruto * aliquotaIOF * 0.96;
-    }
-    if (diasDecorridos <= 180) ir = rendimentoBruto * 0.225;
-    else if (diasDecorridos <= 360) ir = rendimentoBruto * 0.20;
-    else if (diasDecorridos <= 720) ir = rendimentoBruto * 0.175;
-    else ir = rendimentoBruto * 0.15;
-    return { rendimentoBruto, iof, ir, totalLiquido: valorAplicado + rendimentoBruto - iof - ir };
-}
-
-function abrirDetalhesInvestimento(id) {
-    const invest = dados.investimentosMP.find(x => String(x.id) === String(id));
-    if (!invest) return;
-    const hoje = new Date();
-    const dataAplic = new Date(invest.dataAplicacao);
-    const dataVenc = invest.dataVencimento ? new Date(invest.dataVencimento) : null;
-    const diasDecorridos = Math.max(0, Math.ceil((hoje - dataAplic) / (1000*60*60*24)));
-    const diasRestantes = dataVenc ? Math.max(0, Math.ceil((dataVenc - hoje) / (1000*60*60*24))) : 0;
-    const impostos = calcularImpostos(invest.valorAplicado, invest.valorAtual, diasDecorridos);
-    const modal = document.getElementById('modalDetalhesInvestimento');
-    if (!modal) return;
-    document.getElementById('detalhesNomeInvest').innerText = invest.nome;
-    document.getElementById('detalhesValorAplicado').innerText = invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesRendimentoBruto').innerHTML = `+ ${impostos.rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
-    document.getElementById('detalhesIOF').innerHTML = `- ${impostos.iof.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
-    document.getElementById('detalhesIR').innerHTML = `- ${impostos.ir.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
-    document.getElementById('detalhesTotalLiquido').innerHTML = impostos.totalLiquido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesTotalLiquidoResumo').innerHTML = impostos.totalLiquido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    document.getElementById('detalhesRendimentoPercentual').innerText = `${invest.rendimentoPercentual}%`;
-    document.getElementById('detalhesDataAplicacao').innerHTML = `+ ${invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Processada em ${new Date(invest.dataAplicacao).toLocaleDateString('pt-BR')}</span>`;
-    document.getElementById('detalhesRendimentoBrutoMov').innerHTML = `+ ${impostos.rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Rendimento acumulado</span>`;
-    if (dataVenc) {
-        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Em ${dataVenc.toLocaleDateString('pt-BR')}</strong><br><span class="text-[10px] text-slate-400">${diasRestantes} dias restantes</span><p class="text-[10px] text-slate-400 mt-1">O valor final cai automaticamente na sua conta no vencimento.</p>`;
-    } else {
-        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Sem vencimento definido</strong><br><span class="text-[10px] text-slate-400">Resgate a qualquer momento</span>`;
-    }
-    document.getElementById('detalhesResgateTipo').innerHTML = invest.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${invest.resgate || 'Prazo determinado'}`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function fecharModalDetalhes() {
-    const modal = document.getElementById('modalDetalhesInvestimento');
-    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-}
-
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -484,15 +427,16 @@ function atualizarRendimentosDiarios() {
 }
 
 function renderInvestimentosMP() {
-    console.log('renderInvestimentosMP chamada');
+    console.log('Renderizando investimentos...');
     const investimentos = dados.investimentosMP || [];
-    console.log('Investimentos:', investimentos.length);
+    console.log('Quantidade de investimentos:', investimentos.length);
     
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
     const totalRend = totalAtual - totalInvestido;
     const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
 
+    // Atualiza os cards
     const totalInvestidoEl = document.getElementById('totalInvestidoMP');
     const totalAtualEl = document.getElementById('totalAtualMP');
     const totalRendimentoEl = document.getElementById('totalRendimentoMP');
@@ -510,12 +454,12 @@ function renderInvestimentosMP() {
 
     const tbody = document.getElementById('investTableBodyMP');
     if (!tbody) {
-        console.error('investTableBodyMP não encontrado');
+        console.error('Elemento investTableBodyMP não encontrado!');
         return;
     }
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
         return;
     }
     
@@ -545,7 +489,7 @@ function renderInvestimentosMP() {
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
             </td>
-         </tr>`;
+        </tr>`;
     }).join('');
 }
 
@@ -595,6 +539,43 @@ function excluirInvestimentoMP(id) {
         renderInvestimentosMP();
         showToast('Investimento excluído', 'success');
     }
+}
+
+function abrirDetalhesInvestimento(id) {
+    const invest = dados.investimentosMP.find(x => String(x.id) === String(id));
+    if (!invest) return;
+    const modal = document.getElementById('modalDetalhesInvestimento');
+    if (!modal) return;
+    
+    const hoje = new Date();
+    const dataAplic = new Date(invest.dataAplicacao);
+    const dataVenc = invest.dataVencimento ? new Date(invest.dataVencimento) : null;
+    const diasDecorridos = Math.max(0, Math.ceil((hoje - dataAplic) / (1000*60*60*24)));
+    const rendimentoBruto = invest.valorAtual - invest.valorAplicado;
+    
+    document.getElementById('detalhesNomeInvest').innerText = invest.nome;
+    document.getElementById('detalhesValorAplicado').innerText = invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('detalhesRendimentoBruto').innerHTML = `+ ${rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
+    document.getElementById('detalhesTotalLiquido').innerHTML = invest.valorAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('detalhesTotalLiquidoResumo').innerHTML = invest.valorAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    document.getElementById('detalhesRendimentoPercentual').innerText = `${invest.rendimentoPercentual}%`;
+    document.getElementById('detalhesDataAplicacao').innerHTML = `+ ${invest.valorAplicado.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Processada em ${new Date(invest.dataAplicacao).toLocaleDateString('pt-BR')}</span>`;
+    document.getElementById('detalhesRendimentoBrutoMov').innerHTML = `+ ${rendimentoBruto.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}<br><span class="text-[9px] text-slate-400">Rendimento acumulado</span>`;
+    
+    if (dataVenc) {
+        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Em ${dataVenc.toLocaleDateString('pt-BR')}</strong><br><span class="text-[10px] text-slate-400">${Math.max(0, Math.ceil((dataVenc - hoje) / (1000*60*60*24)))} dias restantes</span><p class="text-[10px] text-slate-400 mt-1">O valor final cai automaticamente na sua conta no vencimento.</p>`;
+    } else {
+        document.getElementById('detalhesResgateInfo').innerHTML = `<strong>Sem vencimento definido</strong><br><span class="text-[10px] text-slate-400">Resgate a qualquer momento</span>`;
+    }
+    document.getElementById('detalhesResgateTipo').innerHTML = invest.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${invest.resgate || 'Prazo determinado'}`;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function fecharModalDetalhes() {
+    const modal = document.getElementById('modalDetalhesInvestimento');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
 }
 
 function render() {
@@ -705,7 +686,7 @@ function iniciarAtualizacaoAutomatica() {
     setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
 }
 
-// Exportações para o HTML
+// Exportações
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
