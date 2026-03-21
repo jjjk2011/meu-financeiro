@@ -109,7 +109,7 @@
                 <button id="tabInvestimentos" onclick="mudarAba('investimentos')" class="flex-1 md:flex-none px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-2">📈 INVESTIMENTOS</button>
             </div>
 
-            <!-- Área de Transações -->
+            <!-- Área de Transações (resumida) -->
             <div id="areaTransacoes">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1 space-y-6">
@@ -290,6 +290,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // SUBSTITUA PELAS SUAS CREDENCIAIS
         const firebaseConfig = {
             apiKey: "AIzaSyCBiRF-ISTjYVBv6F1TtCNGpfYWChExVtI",
             authDomain: "meufinanceiro-75b8e.firebaseapp.com",
@@ -298,6 +300,7 @@
             messagingSenderId: "1083437842303",
             appId: "1:1083437842303:web:0c6f76428a738aedffa44a"
         };
+
         const app = initializeApp(firebaseConfig);
         window.auth = getAuth(app);
         window.db = getFirestore(app);
