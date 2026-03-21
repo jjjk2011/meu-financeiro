@@ -336,7 +336,7 @@ function adicionarInvestimento() {
     const corretora = document.getElementById('inCorretora').value;
     const quantidade = parseFloat(document.getElementById('inQuantidade').value);
     const precoMedio = parseFloat(document.getElementById('inPrecoMedio').value);
-    const precoAtual = parseFloat(document.getElementById('inPrecoAtual').value) || precoMedio;
+    let precoAtual = parseFloat(document.getElementById('inPrecoAtual').value);
     const dataCompra = document.getElementById('inDataCompra').value;
     
     if (!ativo || ativo.length < 2) {
@@ -354,6 +354,10 @@ function adicionarInvestimento() {
     if (!tipo || !corretora) {
         showToast('Selecione tipo e corretora', 'error');
         return;
+    }
+    // Se preço atual não for informado ou for inválido, usa preço médio
+    if (isNaN(precoAtual) || precoAtual <= 0) {
+        precoAtual = precoMedio;
     }
 
     const valorTotal = quantidade * precoMedio;
@@ -437,7 +441,7 @@ function excluirInvestimento(id) {
     }
 }
 
-// --- LÓGICA DE TRANSAÇÕES (existente) ---
+// --- LÓGICA DE TRANSAÇÕES ---
 function adicionar() {
     const editId = document.getElementById('editId').value;
     const desc = document.getElementById('inDesc').value.trim();
@@ -531,7 +535,7 @@ function excluirTodasParcelas(descOriginal, parcTotal) {
     
     if (transacoesParaExcluir.length === 0) return false;
     
-    const mensagem = `Deseja excluir TODAS as ${transacoesParaExcluir.length} parcelas?`;
+    const mensagem = `Deseja excluir TODAS as ${transacoesParaExcluir.length} parcelas da despesa "${descOriginal}"?`;
     
     if (confirm(mensagem)) {
         dados.transacoes = dados.transacoes.filter(t => 
@@ -785,6 +789,10 @@ function renderInvestimentos() {
     rentEl.innerText = `${rentabilidadeTotal >= 0 ? '+' : ''}${rentabilidadeTotal.toFixed(2)}%`;
     rentEl.className = `font-bold ${rentabilidadeTotal >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
     
+    // Atualiza contador de investimentos
+    const contadorInvestEl = document.getElementById('contadorInvestimentos');
+    if (contadorInvestEl) contadorInvestEl.innerText = investimentos.length;
+    
     // Tabela de investimentos
     const tableBody = document.getElementById('investTableBody');
     if (!tableBody) return;
@@ -978,7 +986,7 @@ function prepararEdicaoInvest(id) {
     showToast('✏️ Modo edição ativado', 'info');
 }
 
-// --- PDF EXPORT (atualizado para incluir investimentos) ---
+// --- PDF EXPORT ---
 function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
