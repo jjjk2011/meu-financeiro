@@ -323,23 +323,49 @@ function renderTransacoes() {
     tbody.innerHTML = html;
 }
 
-function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento) {
-    const hoje = new Date();
-    const dataAplic = new Date(dataAplicacao);
-    const dataVenc = dataVencimento ? new Date(dataVencimento) : null;
+// Função auxiliar para criar data sem fuso horário
+function criarDataSemFuso(ano, mes, dia) {
+    return new Date(ano, mes, dia);
+}
+
+// Função para formatar data YYYY-MM-DD sem fuso
+function formatarDataLocal(date) {
+    const ano = date.getFullYear();
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const dia = String(date.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+// Função de cálculo igual ao Mercado Pago
+function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacaoStr, dataVencimentoStr) {
+    // Parse das datas ignorando fuso horário
+    const [anoAplic, mesAplic, diaAplic] = dataAplicacaoStr.split('-').map(Number);
+    const dataAplic = new Date(anoAplic, mesAplic - 1, diaAplic);
     
-    // Se não tem vencimento ou já venceu, retorna o valor aplicado
-    if (!dataVenc || hoje <= dataAplic) {
+    const hoje = new Date();
+    const hojeSemFuso = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    
+    let dataVenc = null;
+    if (dataVencimentoStr) {
+        const [anoVenc, mesVenc, diaVenc] = dataVencimentoStr.split('-').map(Number);
+        dataVenc = new Date(anoVenc, mesVenc - 1, diaVenc);
+    }
+    
+    // Se não tem vencimento ou já venceu
+    if (!dataVenc || hojeSemFuso <= dataAplic) {
         return { valorAtual: valorAplicado, rentabilidadeAtual: 0, diasDecorridos: 0 };
     }
     
-    // Calcula dias corridos desde a aplicação
-    const diffTime = Math.abs(hoje - dataAplic);
-    const diasDecorridos = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calcula dias corridos desde a aplicação (usando datas sem fuso)
+    const diffTime = dataVenc - dataAplic;
+    const diasTotais = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Limita aos dias totais até o vencimento
-    const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000 * 60 * 60 * 24));
-    const diasUteisDecorridos = Math.min(diasDecorridos, diasTotais);
+    // Dias decorridos até hoje
+    let diasDecorridos = 0;
+    if (hojeSemFuso > dataAplic) {
+        const diffDecorrido = hojeSemFuso - dataAplic;
+        diasDecorridos = Math.min(Math.ceil(diffDecorrido / (1000 * 60 * 60 * 24)), diasTotais);
+    }
     
     // Taxa CDI anual (13,15% = 0.1315)
     const cdiAnual = 0.1315;
@@ -351,27 +377,26 @@ function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao
     const rendimentoDiario = cdiDiario * (rendimentoPercentual / 100);
     
     // Cálculo do valor atual com juros compostos diários
-    const fator = Math.pow(1 + rendimentoDiario, diasUteisDecorridos);
+    const fator = Math.pow(1 + rendimentoDiario, diasDecorridos);
     const valorAtual = valorAplicado * fator;
     const rentabilidadeAtual = ((valorAtual / valorAplicado) - 1) * 100;
     
     return {
         valorAtual: valorAtual,
         rentabilidadeAtual: rentabilidadeAtual,
-        diasDecorridos: diasUteisDecorridos,
+        diasDecorridos: diasDecorridos,
         diasTotais: diasTotais
     };
 }
 
-// ==================== INVESTIMENTOS CORRIGIDOS ====================
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
     const tipo = document.getElementById('inTipoInvestMP').value;
     const valorAplicado = parseFloat(document.getElementById('inValorAplicado').value);
     const rendimentoPercentual = parseFloat(document.getElementById('inRendimentoPercentual').value);
-    const dataAplicacao = document.getElementById('inDataAplicacao').value;
-    const dataVencimento = document.getElementById('inDataVencimento').value;
+    let dataAplicacao = document.getElementById('inDataAplicacao').value;
+    let dataVencimento = document.getElementById('inDataVencimento').value;
     const resgate = document.getElementById('inResgate').value;
     const resgateImediato = document.getElementById('inResgateImediato').checked;
     const garantiaFGC = document.getElementById('inGarantiaFGC').checked;
@@ -379,6 +404,12 @@ function adicionarInvestimentoMP() {
     if (!nome || nome.length < 3) return showToast('Nome do investimento inválido', 'error');
     if (isNaN(valorAplicado) || valorAplicado <= 0) return showToast('Valor aplicado inválido', 'error');
     if (isNaN(rendimentoPercentual) || rendimentoPercentual <= 0) return showToast('Rendimento inválido', 'error');
+    
+    // Garante que a data está no formato correto
+    if (!dataAplicacao) {
+        const hoje = new Date();
+        dataAplicacao = formatarDataLocal(hoje);
+    }
 
     // Usa a função de cálculo corrigida
     const resultado = calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento);
@@ -397,6 +428,7 @@ function adicionarInvestimentoMP() {
         garantiaFGC: garantiaFGC,
         rentabilidadeAtual: resultado.rentabilidadeAtual,
         diasDecorridos: resultado.diasDecorridos,
+        diasTotais: resultado.diasTotais,
         criadoEm: new Date().toISOString(),
         ultimaAtualizacao: new Date().toISOString()
     };
@@ -416,13 +448,9 @@ function adicionarInvestimentoMP() {
 
 function atualizarRendimentosDiarios() {
     let atualizado = false;
-    const hoje = new Date();
     
     (dados.investimentosMP || []).forEach(inv => {
-        const dataAplic = new Date(inv.dataAplicacao);
-        const dataVenc = inv.dataVencimento ? new Date(inv.dataVencimento) : null;
-        
-        if (dataVenc && hoje > dataAplic && hoje < dataVenc) {
+        if (inv.dataVencimento) {
             const resultado = calcularRendimentoMP(
                 inv.valorAplicado, 
                 inv.rendimentoPercentual, 
@@ -434,20 +462,7 @@ function atualizarRendimentosDiarios() {
                 inv.valorAtual = resultado.valorAtual;
                 inv.rentabilidadeAtual = resultado.rentabilidadeAtual;
                 inv.diasDecorridos = resultado.diasDecorridos;
-                inv.ultimaAtualizacao = hoje.toISOString();
-                atualizado = true;
-            }
-        } else if (dataVenc && hoje >= dataVenc) {
-            // Se já venceu, mantém o valor do vencimento
-            const resultadoVencimento = calcularRendimentoMP(
-                inv.valorAplicado,
-                inv.rendimentoPercentual,
-                inv.dataAplicacao,
-                inv.dataVencimento
-            );
-            if (Math.abs(resultadoVencimento.valorAtual - inv.valorAtual) > 0.01) {
-                inv.valorAtual = resultadoVencimento.valorAtual;
-                inv.rentabilidadeAtual = resultadoVencimento.rentabilidadeAtual;
+                inv.ultimaAtualizacao = new Date().toISOString();
                 atualizado = true;
             }
         }
@@ -464,7 +479,6 @@ function atualizarRendimentosDiarios() {
 
 function renderInvestimentosMP() {
     const investimentos = dados.investimentosMP || [];
-    console.log('Renderizando investimentos:', investimentos.length);
     
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
@@ -490,24 +504,31 @@ function renderInvestimentosMP() {
     if (!tbody) return;
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
+        tbody.innerHTML = 'enstein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
         return;
     }
     
-        tbody.innerHTML = investimentos.map(t => {
+    tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
         
-        // Formata a data de vencimento corretamente
+        // Formata a data de aplicação corretamente (sem fuso)
+        const [anoAplic, mesAplic, diaAplic] = t.dataAplicacao.split('-').map(Number);
+        const dataAplicFormatada = `${diaAplic.toString().padStart(2, '0')}/${mesAplic.toString().padStart(2, '0')}/${anoAplic}`;
+        
+        // Formata a data de vencimento
         let dataVencFormatada = 'Sem vencimento';
         let diasRestantes = '';
         
         if (t.dataVencimento) {
-            const dataVenc = new Date(t.dataVencimento);
-            dataVencFormatada = dataVenc.toLocaleDateString('pt-BR');
+            const [anoVenc, mesVenc, diaVenc] = t.dataVencimento.split('-').map(Number);
+            dataVencFormatada = `${diaVenc.toString().padStart(2, '0')}/${mesVenc.toString().padStart(2, '0')}/${anoVenc}`;
             
             const hoje = new Date();
-            if (hoje < dataVenc) {
-                const diffDias = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+            const hojeSemFuso = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            const dataVenc = new Date(anoVenc, mesVenc - 1, diaVenc);
+            
+            if (hojeSemFuso < dataVenc) {
+                const diffDias = Math.ceil((dataVenc - hojeSemFuso) / (1000 * 60 * 60 * 24));
                 diasRestantes = ` (${diffDias} dias restantes)`;
             }
         }
@@ -520,41 +541,39 @@ function renderInvestimentosMP() {
             <td class="py-4 px-3">
                 <div class="font-bold text-sm">${t.nome}</div>
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
-            </td>
+             </td>
             <td class="py-4 text-right">
                 <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
                 <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual >= 0 ? '+' : ''}${t.rentabilidadeAtual.toFixed(2)}%</div>
-            </td>
+             </td>
             <td class="py-4 text-right">
                 <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
                 <div class="text-[9px] text-slate-400">${resgateInfo}</div>
-            </td>
+             </td>
             <td class="py-4 text-right">
-                <div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div>
+                <div class="text-[10px] text-slate-400">Aplic: ${dataAplicFormatada}</div>
                 <div class="text-[10px] text-slate-400">Venc: ${dataVencFormatada}${diasRestantes}</div>
-            </td>
+             </td>
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
-            </td>
-        </tr>`;
+             </td>
+         </tr>`;
     }).join('');
 }
 
-function abrirModalInvestimento() {
-    const modal = document.getElementById('modalInvestimento');
-    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); resetFormInvestMP(); }
-}
-function fecharModalInvestimento() {
-    const modal = document.getElementById('modalInvestimento');
-    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
-}
+// Função resetFormInvestMP corrigida
 function resetFormInvestMP() {
     document.getElementById('editIdInvestMP').value = '';
     document.getElementById('inNomeInvest').value = '';
     document.getElementById('inTipoInvestMP').value = 'Renda Fixa';
     document.getElementById('inValorAplicado').value = '';
     document.getElementById('inRendimentoPercentual').value = '';
-    document.getElementById('inDataAplicacao').value = new Date().toISOString().split('T')[0];
+    
+    // Data atual no formato YYYY-MM-DD sem fuso
+    const hoje = new Date();
+    const dataAtual = formatarDataLocal(hoje);
+    document.getElementById('inDataAplicacao').value = dataAtual;
+    
     document.getElementById('inDataVencimento').value = '';
     document.getElementById('inResgate').value = '';
     document.getElementById('inResgateImediato').checked = false;
@@ -562,9 +581,12 @@ function resetFormInvestMP() {
     document.getElementById('btnSaveInvestMP').innerText = '💾 SALVAR INVESTIMENTO';
     document.getElementById('btnCancelEditInvestMP').classList.add('hidden');
 }
+
+// Função prepararEdicaoInvestMP corrigida
 function prepararEdicaoInvestMP(id) {
     const t = dados.investimentosMP.find(x => String(x.id) === String(id));
     if (!t) return showToast('Erro ao carregar investimento', 'error');
+    
     document.getElementById('editIdInvestMP').value = t.id;
     document.getElementById('inNomeInvest').value = t.nome;
     document.getElementById('inTipoInvestMP').value = t.tipo;
