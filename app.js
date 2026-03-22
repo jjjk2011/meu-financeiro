@@ -336,8 +336,32 @@ function formatarDataLocal(date) {
     return `${ano}-${mes}-${dia}`;
 }
 
-// Função de cálculo igual ao Mercado Pago
-function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacaoStr, dataVencimentoStr) {
+// Função para calcular alíquota do IOF (regressivo para CDB)
+function calcularIOF(diasDecorridos) {
+    // IOF regressivo: 96% no primeiro dia, reduz 4% ao dia até 30 dias
+    // Para CDB, IOF é cobrado apenas nos primeiros 30 dias
+    if (diasDecorridos <= 30) {
+        const aliquotaIOF = Math.max(0, 96 - (diasDecorridos - 1) * 4);
+        return aliquotaIOF / 100;
+    }
+    return 0;
+}
+
+// Função para calcular alíquota do Imposto de Renda (regressivo)
+function calcularIR(diasDecorridos) {
+    // IR regressivo para investimentos de renda fixa
+    // Até 180 dias: 22.5%
+    // 181 a 360 dias: 20%
+    // 361 a 720 dias: 17.5%
+    // Acima de 720 dias: 15%
+    if (diasDecorridos <= 180) return 0.225;
+    if (diasDecorridos <= 360) return 0.20;
+    if (diasDecorridos <= 720) return 0.175;
+    return 0.15;
+}
+
+// Função de cálculo completa igual ao Mercado Pago
+function calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataAplicacaoStr, dataVencimentoStr) {
     // Parse das datas ignorando fuso horário
     const [anoAplic, mesAplic, diaAplic] = dataAplicacaoStr.split('-').map(Number);
     const dataAplic = new Date(anoAplic, mesAplic - 1, diaAplic);
@@ -353,10 +377,21 @@ function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao
     
     // Se não tem vencimento ou já venceu
     if (!dataVenc || hojeSemFuso <= dataAplic) {
-        return { valorAtual: valorAplicado, rentabilidadeAtual: 0, diasDecorridos: 0 };
+        return {
+            valorAplicado: valorAplicado,
+            valorAtualBruto: valorAplicado,
+            rendimentoBruto: 0,
+            iof: 0,
+            impostoRenda: 0,
+            valorAtualLiquido: valorAplicado,
+            rentabilidadeBruta: 0,
+            rentabilidadeLiquida: 0,
+            diasDecorridos: 0,
+            diasTotais: 0
+        };
     }
     
-    // Calcula dias corridos desde a aplicação (usando datas sem fuso)
+    // Calcula dias corridos desde a aplicação
     const diffTime = dataVenc - dataAplic;
     const diasTotais = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -376,19 +411,45 @@ function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao
     // Rendimento diário do investimento (% do CDI)
     const rendimentoDiario = cdiDiario * (rendimentoPercentual / 100);
     
-    // Cálculo do valor atual com juros compostos diários
+    // Cálculo do valor bruto com juros compostos diários
     const fator = Math.pow(1 + rendimentoDiario, diasDecorridos);
-    const valorAtual = valorAplicado * fator;
-    const rentabilidadeAtual = ((valorAtual / valorAplicado) - 1) * 100;
+    const valorAtualBruto = valorAplicado * fator;
+    const rendimentoBruto = valorAtualBruto - valorAplicado;
+    
+    // Cálculo do IOF (apenas nos primeiros 30 dias)
+    const aliquotaIOF = calcularIOF(diasDecorridos);
+    let iof = rendimentoBruto * aliquotaIOF;
+    iof = Math.max(0, iof);
+    
+    // Cálculo do Imposto de Renda sobre o rendimento bruto após IOF
+    const rendimentoAposIOF = rendimentoBruto - iof;
+    const aliquotaIR = calcularIR(diasDecorridos);
+    const impostoRenda = rendimentoAposIOF * aliquotaIR;
+    
+    // Valor líquido final
+    const valorAtualLiquido = valorAplicado + rendimentoBruto - iof - impostoRenda;
+    
+    // Rentabilidades
+    const rentabilidadeBruta = (rendimentoBruto / valorAplicado) * 100;
+    const rentabilidadeLiquida = ((valorAtualLiquido - valorAplicado) / valorAplicado) * 100;
     
     return {
-        valorAtual: valorAtual,
-        rentabilidadeAtual: rentabilidadeAtual,
+        valorAplicado: valorAplicado,
+        valorAtualBruto: valorAtualBruto,
+        rendimentoBruto: rendimentoBruto,
+        iof: iof,
+        impostoRenda: impostoRenda,
+        valorAtualLiquido: valorAtualLiquido,
+        rentabilidadeBruta: rentabilidadeBruta,
+        rentabilidadeLiquida: rentabilidadeLiquida,
         diasDecorridos: diasDecorridos,
-        diasTotais: diasTotais
+        diasTotais: diasTotais,
+        aliquotaIOF: aliquotaIOF * 100,
+        aliquotaIR: aliquotaIR * 100
     };
 }
 
+// Função para adicionar investimento com cálculo completo
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -411,24 +472,31 @@ function adicionarInvestimentoMP() {
         dataAplicacao = formatarDataLocal(hoje);
     }
 
-    // Usa a função de cálculo corrigida
-    const resultado = calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento);
+    // Usa a função de cálculo completa
+    const resultado = calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento);
 
     const invest = {
         id: editId || (Date.now() + Math.random().toString(36).substr(2, 9)),
         nome: nome.toUpperCase(),
         tipo: tipo,
         valorAplicado: valorAplicado,
-        valorAtual: resultado.valorAtual,
+        valorAtualBruto: resultado.valorAtualBruto,
+        valorAtualLiquido: resultado.valorAtualLiquido,
+        rendimentoBruto: resultado.rendimentoBruto,
+        iof: resultado.iof,
+        impostoRenda: resultado.impostoRenda,
         rendimentoPercentual: rendimentoPercentual,
         dataAplicacao: dataAplicacao,
         dataVencimento: dataVencimento || null,
         resgate: resgate,
         resgateImediato: resgateImediato,
         garantiaFGC: garantiaFGC,
-        rentabilidadeAtual: resultado.rentabilidadeAtual,
+        rentabilidadeBruta: resultado.rentabilidadeBruta,
+        rentabilidadeLiquida: resultado.rentabilidadeLiquida,
         diasDecorridos: resultado.diasDecorridos,
         diasTotais: resultado.diasTotais,
+        aliquotaIOF: resultado.aliquotaIOF,
+        aliquotaIR: resultado.aliquotaIR,
         criadoEm: new Date().toISOString(),
         ultimaAtualizacao: new Date().toISOString()
     };
@@ -446,22 +514,30 @@ function adicionarInvestimentoMP() {
     renderInvestimentosMP();
 }
 
+// Função para atualizar rendimentos diários
 function atualizarRendimentosDiarios() {
     let atualizado = false;
     
     (dados.investimentosMP || []).forEach(inv => {
         if (inv.dataVencimento) {
-            const resultado = calcularRendimentoMP(
+            const resultado = calcularRendimentoMPCompleto(
                 inv.valorAplicado, 
                 inv.rendimentoPercentual, 
                 inv.dataAplicacao, 
                 inv.dataVencimento
             );
             
-            if (Math.abs(resultado.valorAtual - inv.valorAtual) > 0.01) {
-                inv.valorAtual = resultado.valorAtual;
-                inv.rentabilidadeAtual = resultado.rentabilidadeAtual;
+            if (Math.abs(resultado.valorAtualLiquido - inv.valorAtualLiquido) > 0.01) {
+                inv.valorAtualBruto = resultado.valorAtualBruto;
+                inv.valorAtualLiquido = resultado.valorAtualLiquido;
+                inv.rendimentoBruto = resultado.rendimentoBruto;
+                inv.iof = resultado.iof;
+                inv.impostoRenda = resultado.impostoRenda;
+                inv.rentabilidadeBruta = resultado.rentabilidadeBruta;
+                inv.rentabilidadeLiquida = resultado.rentabilidadeLiquida;
                 inv.diasDecorridos = resultado.diasDecorridos;
+                inv.aliquotaIOF = resultado.aliquotaIOF;
+                inv.aliquotaIR = resultado.aliquotaIR;
                 inv.ultimaAtualizacao = new Date().toISOString();
                 atualizado = true;
             }
@@ -472,18 +548,18 @@ function atualizarRendimentosDiarios() {
         syncToCloud();
         renderInvestimentosMP();
         showToast('💰 Rendimentos atualizados!', 'success');
-    } else {
-        showToast('Nenhuma atualização necessária', 'info');
     }
 }
 
+// Função para renderizar investimentos com valores líquidos
 function renderInvestimentosMP() {
     const investimentos = dados.investimentosMP || [];
     
+    // Totais com valores líquidos
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
-    const totalAtual = investimentos.reduce((s, t) => s + t.valorAtual, 0);
-    const totalRend = totalAtual - totalInvestido;
-    const rentTotal = totalInvestido > 0 ? (totalRend / totalInvestido) * 100 : 0;
+    const totalAtualLiquido = investimentos.reduce((s, t) => s + t.valorAtualLiquido, 0);
+    const totalRendLiquido = totalAtualLiquido - totalInvestido;
+    const rentTotal = totalInvestido > 0 ? (totalRendLiquido / totalInvestido) * 100 : 0;
 
     const totalInvestidoEl = document.getElementById('totalInvestidoMP');
     const totalAtualEl = document.getElementById('totalAtualMP');
@@ -492,10 +568,10 @@ function renderInvestimentosMP() {
     const contadorEl = document.getElementById('contadorInvestimentosMP');
     
     if (totalInvestidoEl) totalInvestidoEl.innerText = totalInvestido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-    if (totalAtualEl) totalAtualEl.innerText = totalAtual.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+    if (totalAtualEl) totalAtualEl.innerText = totalAtualLiquido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
     if (totalRendimentoEl) {
-        totalRendimentoEl.innerText = totalRend.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
-        totalRendimentoEl.className = `font-bold ${totalRend>=0?'text-emerald-500':'text-rose-500'}`;
+        totalRendimentoEl.innerText = totalRendLiquido.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+        totalRendimentoEl.className = `font-bold ${totalRendLiquido>=0?'text-emerald-500':'text-rose-500'}`;
     }
     if (rentabilidadeTotalEl) rentabilidadeTotalEl.innerHTML = `${rentTotal>=0?'+':''}${rentTotal.toFixed(2)}%`;
     if (contadorEl) contadorEl.innerText = investimentos.length;
@@ -511,11 +587,10 @@ function renderInvestimentosMP() {
     tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
         
-        // Formata a data de aplicação corretamente (sem fuso)
+        // Formata as datas
         const [anoAplic, mesAplic, diaAplic] = t.dataAplicacao.split('-').map(Number);
         const dataAplicFormatada = `${diaAplic.toString().padStart(2, '0')}/${mesAplic.toString().padStart(2, '0')}/${anoAplic}`;
         
-        // Formata a data de vencimento
         let dataVencFormatada = 'Sem vencimento';
         let diasRestantes = '';
         
@@ -534,8 +609,9 @@ function renderInvestimentosMP() {
         }
         
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
-        const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const rendColor = t.rentabilidadeLiquida >= 0 ? 'text-emerald-500' : 'text-rose-500';
         
+        // Mostra o valor líquido e a rentabilidade líquida
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3">
@@ -543,12 +619,13 @@ function renderInvestimentosMP() {
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
              </td>
             <td class="py-4 text-right">
-                <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
-                <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual >= 0 ? '+' : ''}${t.rentabilidadeAtual.toFixed(2)}%</div>
+                <div class="font-bold">${t.valorAtualLiquido.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
+                <div class="text-[10px] ${rendColor}">${t.rentabilidadeLiquida >= 0 ? '+' : ''}${t.rentabilidadeLiquida.toFixed(2)}%</div>
              </td>
             <td class="py-4 text-right">
                 <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
                 <div class="text-[9px] text-slate-400">${resgateInfo}</div>
+                <div class="text-[8px] text-slate-500 mt-1">IOF: ${t.aliquotaIOF.toFixed(0)}% | IR: ${t.aliquotaIR.toFixed(1)}%</div>
              </td>
             <td class="py-4 text-right">
                 <div class="text-[10px] text-slate-400">Aplic: ${dataAplicFormatada}</div>
@@ -557,7 +634,7 @@ function renderInvestimentosMP() {
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
              </td>
-         </tr>`;
+          </tr>`;
     }).join('');
 }
 
