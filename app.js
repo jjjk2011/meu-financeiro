@@ -494,11 +494,27 @@ function renderInvestimentosMP() {
         return;
     }
     
-    tbody.innerHTML = investimentos.map(t => {
+        tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
-        const dataVenc = t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-BR') : 'Sem vencimento';
+        
+        // Formata a data de vencimento corretamente
+        let dataVencFormatada = 'Sem vencimento';
+        let diasRestantes = '';
+        
+        if (t.dataVencimento) {
+            const dataVenc = new Date(t.dataVencimento);
+            dataVencFormatada = dataVenc.toLocaleDateString('pt-BR');
+            
+            const hoje = new Date();
+            if (hoje < dataVenc) {
+                const diffDias = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
+                diasRestantes = ` (${diffDias} dias restantes)`;
+            }
+        }
+        
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
         const rendColor = t.rentabilidadeAtual >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3">
@@ -506,8 +522,8 @@ function renderInvestimentosMP() {
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
             </td>
             <td class="py-4 text-right">
-                <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
-                <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%</div>
+                <div class="font-bold">${t.valorAtual.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
+                <div class="text-[10px] ${rendColor}">${t.rentabilidadeAtual >= 0 ? '+' : ''}${t.rentabilidadeAtual.toFixed(2)}%</div>
             </td>
             <td class="py-4 text-right">
                 <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
@@ -515,7 +531,7 @@ function renderInvestimentosMP() {
             </td>
             <td class="py-4 text-right">
                 <div class="text-[10px] text-slate-400">Aplic: ${new Date(t.dataAplicacao).toLocaleDateString('pt-BR')}</div>
-                <div class="text-[10px] text-slate-400">Venc: ${dataVenc}</div>
+                <div class="text-[10px] text-slate-400">Venc: ${dataVencFormatada}${diasRestantes}</div>
             </td>
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
