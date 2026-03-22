@@ -286,7 +286,7 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td></tr>';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
         return;
     }
     let html = '';
@@ -301,7 +301,7 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -316,12 +316,14 @@ function renderTransacoes() {
                 <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
                 <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
                 <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-             </tr>`;
+              </tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
     tbody.innerHTML = html;
 }
+
+// ==================== FUNÇÕES DE INVESTIMENTO ====================
 
 // Função auxiliar para criar data sem fuso horário
 function criarDataSemFuso(ano, mes, dia) {
@@ -338,8 +340,6 @@ function formatarDataLocal(date) {
 
 // Função para calcular alíquota do IOF (regressivo para CDB)
 function calcularIOF(diasDecorridos) {
-    // IOF regressivo: 96% no primeiro dia, reduz 4% ao dia até 30 dias
-    // Para CDB, IOF é cobrado apenas nos primeiros 30 dias
     if (diasDecorridos <= 30) {
         const aliquotaIOF = Math.max(0, 96 - (diasDecorridos - 1) * 4);
         return aliquotaIOF / 100;
@@ -349,11 +349,6 @@ function calcularIOF(diasDecorridos) {
 
 // Função para calcular alíquota do Imposto de Renda (regressivo)
 function calcularIR(diasDecorridos) {
-    // IR regressivo para investimentos de renda fixa
-    // Até 180 dias: 22.5%
-    // 181 a 360 dias: 20%
-    // 361 a 720 dias: 17.5%
-    // Acima de 720 dias: 15%
     if (diasDecorridos <= 180) return 0.225;
     if (diasDecorridos <= 360) return 0.20;
     if (diasDecorridos <= 720) return 0.175;
@@ -362,7 +357,6 @@ function calcularIR(diasDecorridos) {
 
 // Função de cálculo completa igual ao Mercado Pago
 function calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataAplicacaoStr, dataVencimentoStr) {
-    // Parse das datas ignorando fuso horário
     const [anoAplic, mesAplic, diaAplic] = dataAplicacaoStr.split('-').map(Number);
     const dataAplic = new Date(anoAplic, mesAplic - 1, diaAplic);
     
@@ -375,7 +369,6 @@ function calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataA
         dataVenc = new Date(anoVenc, mesVenc - 1, diaVenc);
     }
     
-    // Se não tem vencimento ou já venceu
     if (!dataVenc || hojeSemFuso <= dataAplic) {
         return {
             valorAplicado: valorAplicado,
@@ -387,49 +380,36 @@ function calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataA
             rentabilidadeBruta: 0,
             rentabilidadeLiquida: 0,
             diasDecorridos: 0,
-            diasTotais: 0
+            diasTotais: 0,
+            aliquotaIOF: 0,
+            aliquotaIR: 0
         };
     }
     
-    // Calcula dias corridos desde a aplicação
     const diffTime = dataVenc - dataAplic;
     const diasTotais = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Dias decorridos até hoje
     let diasDecorridos = 0;
     if (hojeSemFuso > dataAplic) {
         const diffDecorrido = hojeSemFuso - dataAplic;
         diasDecorridos = Math.min(Math.ceil(diffDecorrido / (1000 * 60 * 60 * 24)), diasTotais);
     }
     
-    // Taxa CDI anual (13,15% = 0.1315)
     const cdiAnual = 0.1315;
-    
-    // Taxa diária do CDI (base 252 dias úteis)
     const cdiDiario = Math.pow(1 + cdiAnual, 1 / 252) - 1;
-    
-    // Rendimento diário do investimento (% do CDI)
     const rendimentoDiario = cdiDiario * (rendimentoPercentual / 100);
-    
-    // Cálculo do valor bruto com juros compostos diários
     const fator = Math.pow(1 + rendimentoDiario, diasDecorridos);
     const valorAtualBruto = valorAplicado * fator;
     const rendimentoBruto = valorAtualBruto - valorAplicado;
     
-    // Cálculo do IOF (apenas nos primeiros 30 dias)
     const aliquotaIOF = calcularIOF(diasDecorridos);
     let iof = rendimentoBruto * aliquotaIOF;
     iof = Math.max(0, iof);
     
-    // Cálculo do Imposto de Renda sobre o rendimento bruto após IOF
     const rendimentoAposIOF = rendimentoBruto - iof;
     const aliquotaIR = calcularIR(diasDecorridos);
     const impostoRenda = rendimentoAposIOF * aliquotaIR;
-    
-    // Valor líquido final
     const valorAtualLiquido = valorAplicado + rendimentoBruto - iof - impostoRenda;
-    
-    // Rentabilidades
     const rentabilidadeBruta = (rendimentoBruto / valorAplicado) * 100;
     const rentabilidadeLiquida = ((valorAtualLiquido - valorAplicado) / valorAplicado) * 100;
     
@@ -449,7 +429,7 @@ function calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataA
     };
 }
 
-// Função para adicionar investimento com cálculo completo
+// Função para adicionar investimento
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -466,13 +446,11 @@ function adicionarInvestimentoMP() {
     if (isNaN(valorAplicado) || valorAplicado <= 0) return showToast('Valor aplicado inválido', 'error');
     if (isNaN(rendimentoPercentual) || rendimentoPercentual <= 0) return showToast('Rendimento inválido', 'error');
     
-    // Garante que a data está no formato correto
     if (!dataAplicacao) {
         const hoje = new Date();
         dataAplicacao = formatarDataLocal(hoje);
     }
 
-    // Usa a função de cálculo completa
     const resultado = calcularRendimentoMPCompleto(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento);
 
     const invest = {
@@ -551,11 +529,10 @@ function atualizarRendimentosDiarios() {
     }
 }
 
-// Função para renderizar investimentos com valores líquidos
+// Função para renderizar investimentos
 function renderInvestimentosMP() {
     const investimentos = dados.investimentosMP || [];
     
-    // Totais com valores líquidos
     const totalInvestido = investimentos.reduce((s, t) => s + t.valorAplicado, 0);
     const totalAtualLiquido = investimentos.reduce((s, t) => s + t.valorAtualLiquido, 0);
     const totalRendLiquido = totalAtualLiquido - totalInvestido;
@@ -580,14 +557,13 @@ function renderInvestimentosMP() {
     if (!tbody) return;
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = 'enstein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td>stein';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
         return;
     }
     
     tbody.innerHTML = investimentos.map(t => {
         const idSeguro = String(t.id).replace(/'/g, "\\'");
         
-        // Formata as datas
         const [anoAplic, mesAplic, diaAplic] = t.dataAplicacao.split('-').map(Number);
         const dataAplicFormatada = `${diaAplic.toString().padStart(2, '0')}/${mesAplic.toString().padStart(2, '0')}/${anoAplic}`;
         
@@ -611,34 +587,52 @@ function renderInvestimentosMP() {
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
         const rendColor = t.rentabilidadeLiquida >= 0 ? 'text-emerald-500' : 'text-rose-500';
         
-        // Mostra o valor líquido e a rentabilidade líquida
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3">
                 <div class="font-bold text-sm">${t.nome}</div>
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
-             </td>
+              </td>
             <td class="py-4 text-right">
                 <div class="font-bold">${t.valorAtualLiquido.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
                 <div class="text-[10px] ${rendColor}">${t.rentabilidadeLiquida >= 0 ? '+' : ''}${t.rentabilidadeLiquida.toFixed(2)}%</div>
-             </td>
+               </td>
             <td class="py-4 text-right">
                 <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
                 <div class="text-[9px] text-slate-400">${resgateInfo}</div>
                 <div class="text-[8px] text-slate-500 mt-1">IOF: ${t.aliquotaIOF.toFixed(0)}% | IR: ${t.aliquotaIR.toFixed(1)}%</div>
-             </td>
+               </td>
             <td class="py-4 text-right">
                 <div class="text-[10px] text-slate-400">Aplic: ${dataAplicFormatada}</div>
                 <div class="text-[10px] text-slate-400">Venc: ${dataVencFormatada}${diasRestantes}</div>
-             </td>
+               </td>
             <td class="text-right px-2">
                 <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
-             </td>
-          </tr>`;
+               </td>
+           </tr>`;
     }).join('');
 }
 
-// Função resetFormInvestMP corrigida
+// Função para abrir o modal de investimento
+function abrirModalInvestimento() {
+    const modal = document.getElementById('modalInvestimento');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        resetFormInvestMP();
+    }
+}
+
+// Função para fechar o modal de investimento
+function fecharModalInvestimento() {
+    const modal = document.getElementById('modalInvestimento');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+// Função reset do formulário de investimento
 function resetFormInvestMP() {
     document.getElementById('editIdInvestMP').value = '';
     document.getElementById('inNomeInvest').value = '';
@@ -646,7 +640,6 @@ function resetFormInvestMP() {
     document.getElementById('inValorAplicado').value = '';
     document.getElementById('inRendimentoPercentual').value = '';
     
-    // Data atual no formato YYYY-MM-DD sem fuso
     const hoje = new Date();
     const dataAtual = formatarDataLocal(hoje);
     document.getElementById('inDataAplicacao').value = dataAtual;
@@ -659,7 +652,7 @@ function resetFormInvestMP() {
     document.getElementById('btnCancelEditInvestMP').classList.add('hidden');
 }
 
-// Função prepararEdicaoInvestMP corrigida
+// Função para preparar edição de investimento
 function prepararEdicaoInvestMP(id) {
     const t = dados.investimentosMP.find(x => String(x.id) === String(id));
     if (!t) return showToast('Erro ao carregar investimento', 'error');
@@ -678,6 +671,8 @@ function prepararEdicaoInvestMP(id) {
     document.getElementById('btnCancelEditInvestMP').classList.remove('hidden');
     abrirModalInvestimento();
 }
+
+// Função para excluir investimento
 function excluirInvestimentoMP(id) {
     if (confirm("Excluir este investimento?")) {
         dados.investimentosMP = dados.investimentosMP.filter(t => String(t.id) !== String(id));
@@ -686,6 +681,8 @@ function excluirInvestimentoMP(id) {
         showToast('Investimento excluído', 'success');
     }
 }
+
+// ==================== FUNÇÕES GERAIS ====================
 
 function render() {
     if (activeTab === 'transacoes') renderTransacoes();
@@ -705,7 +702,7 @@ function initDateFilters() {
     });
     document.getElementById('fYear').value = document.getElementById('inYear').value = now.getFullYear();
     const dataCompra = document.getElementById('inDataAplicacao');
-    if (dataCompra) dataCompra.value = now.toISOString().split('T')[0];
+    if (dataCompra) dataCompra.value = formatarDataLocal(now);
 }
 function filtrarTabela(texto) { filtroBusca = texto; render(); }
 
@@ -764,14 +761,14 @@ function exportarPDF() {
     } else {
         const inv = dados.investimentosMP || [];
         const totalInv = inv.reduce((s,t)=>s+t.valorAplicado,0);
-        const totalAtual = inv.reduce((s,t)=>s+t.valorAtual,0);
+        const totalAtual = inv.reduce((s,t)=>s+t.valorAtualLiquido,0);
         const totalLucro = totalAtual - totalInv;
         const rent = totalInv>0?(totalLucro/totalInv)*100:0;
         doc.setFontSize(20); doc.setTextColor(0,150,100); doc.text('Relatório de Investimentos',20,20);
         doc.setFontSize(14); doc.setTextColor(0); doc.text('Resumo da Carteira',20,35);
         doc.autoTable({ startY:40, head:[['Descrição','Valor']], body:[['Total Investido',`R$ ${totalInv.toFixed(2)}`],['Valor Atual',`R$ ${totalAtual.toFixed(2)}`],['Lucro/Prejuízo',`R$ ${totalLucro.toFixed(2)}`],['Rentabilidade',`${rent>=0?'+':''}${rent.toFixed(2)}%`]], theme:'striped', headStyles:{fillColor:[16,185,129]} });
         doc.text('Detalhamento',20,doc.lastAutoTable.finalY+15);
-        doc.autoTable({ startY:doc.lastAutoTable.finalY+20, head:[['Ativo','Tipo','Corretora','Quant.','P.Médio','P.Atual','Total','Lucro','Rent.']], body:inv.map(t=>[t.nome,t.tipo,'Mercado Pago','1',`R$ ${t.valorAplicado.toFixed(2)}`,`R$ ${t.valorAtual.toFixed(2)}`,`R$ ${t.valorAtual.toFixed(2)}`,`R$ ${(t.valorAtual-t.valorAplicado).toFixed(2)}`,`${t.rentabilidadeAtual>=0?'+':''}${t.rentabilidadeAtual.toFixed(2)}%`]), theme:'striped', headStyles:{fillColor:[59,130,246]} });
+        doc.autoTable({ startY:doc.lastAutoTable.finalY+20, head:[['Ativo','Tipo','Corretora','Quant.','P.Médio','P.Atual','Total','Lucro','Rent.']], body:inv.map(t=>[t.nome,t.tipo,'Mercado Pago','1',`R$ ${t.valorAplicado.toFixed(2)}`,`R$ ${t.valorAtualLiquido.toFixed(2)}`,`R$ ${t.valorAtualLiquido.toFixed(2)}`,`R$ ${(t.valorAtualLiquido-t.valorAplicado).toFixed(2)}`,`${t.rentabilidadeLiquida>=0?'+':''}${t.rentabilidadeLiquida.toFixed(2)}%`]), theme:'striped', headStyles:{fillColor:[59,130,246]} });
         doc.save(`investimentos-${new Date().toISOString().split('T')[0]}.pdf`);
     }
     showToast('PDF gerado!', 'success');
@@ -792,6 +789,7 @@ function iniciarAtualizacaoAutomatica() {
     setInterval(atualizarRendimentosDiarios, 6*60*60*1000);
 }
 
+// Exportações para o HTML
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
