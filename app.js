@@ -323,6 +323,47 @@ function renderTransacoes() {
     tbody.innerHTML = html;
 }
 
+function calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento) {
+    const hoje = new Date();
+    const dataAplic = new Date(dataAplicacao);
+    const dataVenc = dataVencimento ? new Date(dataVencimento) : null;
+    
+    // Se não tem vencimento ou já venceu, retorna o valor aplicado
+    if (!dataVenc || hoje <= dataAplic) {
+        return { valorAtual: valorAplicado, rentabilidadeAtual: 0, diasDecorridos: 0 };
+    }
+    
+    // Calcula dias corridos desde a aplicação
+    const diffTime = Math.abs(hoje - dataAplic);
+    const diasDecorridos = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Limita aos dias totais até o vencimento
+    const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000 * 60 * 60 * 24));
+    const diasUteisDecorridos = Math.min(diasDecorridos, diasTotais);
+    
+    // Taxa CDI anual (13,15% = 0.1315)
+    const cdiAnual = 0.1315;
+    
+    // Taxa diária do CDI (base 252 dias úteis)
+    const cdiDiario = Math.pow(1 + cdiAnual, 1 / 252) - 1;
+    
+    // Rendimento diário do investimento (% do CDI)
+    const rendimentoDiario = cdiDiario * (rendimentoPercentual / 100);
+    
+    // Cálculo do valor atual com juros compostos diários
+    const fator = Math.pow(1 + rendimentoDiario, diasUteisDecorridos);
+    const valorAtual = valorAplicado * fator;
+    const rentabilidadeAtual = ((valorAtual / valorAplicado) - 1) * 100;
+    
+    return {
+        valorAtual: valorAtual,
+        rentabilidadeAtual: rentabilidadeAtual,
+        diasDecorridos: diasUteisDecorridos,
+        diasTotais: diasTotais
+    };
+}
+
+// ==================== INVESTIMENTOS CORRIGIDOS ====================
 function adicionarInvestimentoMP() {
     const editId = document.getElementById('editIdInvestMP').value;
     const nome = document.getElementById('inNomeInvest').value.trim();
@@ -339,35 +380,23 @@ function adicionarInvestimentoMP() {
     if (isNaN(valorAplicado) || valorAplicado <= 0) return showToast('Valor aplicado inválido', 'error');
     if (isNaN(rendimentoPercentual) || rendimentoPercentual <= 0) return showToast('Rendimento inválido', 'error');
 
-    const hoje = new Date();
-    const dataAplic = new Date(dataAplicacao);
-    const dataVenc = dataVencimento ? new Date(dataVencimento) : null;
-    let valorAtual = valorAplicado;
-    let rentabilidadeAtual = 0;
-    if (dataVenc && hoje > dataAplic) {
-        const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
-        const diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
-        const taxaCDIAnual = 13.15 / 100;
-        const taxaDiaria = Math.pow(1 + taxaCDIAnual, 1/252) - 1;
-        const rendDiario = taxaDiaria * (rendimentoPercentual / 100);
-        const fator = Math.pow(1 + rendDiario, diasDecorridos);
-        valorAtual = valorAplicado * fator;
-        rentabilidadeAtual = ((valorAtual / valorAplicado) - 1) * 100;
-    }
+    // Usa a função de cálculo corrigida
+    const resultado = calcularRendimentoMP(valorAplicado, rendimentoPercentual, dataAplicacao, dataVencimento);
 
     const invest = {
-        id: editId || (Date.now() + Math.random().toString(36).substr(2,9)),
+        id: editId || (Date.now() + Math.random().toString(36).substr(2, 9)),
         nome: nome.toUpperCase(),
         tipo: tipo,
         valorAplicado: valorAplicado,
-        valorAtual: valorAtual,
+        valorAtual: resultado.valorAtual,
         rendimentoPercentual: rendimentoPercentual,
         dataAplicacao: dataAplicacao,
         dataVencimento: dataVencimento || null,
         resgate: resgate,
         resgateImediato: resgateImediato,
         garantiaFGC: garantiaFGC,
-        rentabilidadeAtual: rentabilidadeAtual,
+        rentabilidadeAtual: resultado.rentabilidadeAtual,
+        diasDecorridos: resultado.diasDecorridos,
         criadoEm: new Date().toISOString(),
         ultimaAtualizacao: new Date().toISOString()
     };
@@ -388,26 +417,42 @@ function adicionarInvestimentoMP() {
 function atualizarRendimentosDiarios() {
     let atualizado = false;
     const hoje = new Date();
-    const taxaCDIAnual = 13.15 / 100;
-    const taxaDiaria = Math.pow(1 + taxaCDIAnual, 1/252) - 1;
+    
     (dados.investimentosMP || []).forEach(inv => {
         const dataAplic = new Date(inv.dataAplicacao);
         const dataVenc = inv.dataVencimento ? new Date(inv.dataVencimento) : null;
+        
         if (dataVenc && hoje > dataAplic && hoje < dataVenc) {
-            const diasTotais = Math.ceil((dataVenc - dataAplic) / (1000*60*60*24));
-            const diasDecorridos = Math.min(Math.ceil((hoje - dataAplic) / (1000*60*60*24)), diasTotais);
-            const rendDiario = taxaDiaria * (inv.rendimentoPercentual / 100);
-            const fator = Math.pow(1 + rendDiario, diasDecorridos);
-            const novoValor = inv.valorAplicado * fator;
-            const novaRent = ((novoValor / inv.valorAplicado) - 1) * 100;
-            if (Math.abs(novoValor - inv.valorAtual) > 0.01) {
-                inv.valorAtual = novoValor;
-                inv.rentabilidadeAtual = novaRent;
+            const resultado = calcularRendimentoMP(
+                inv.valorAplicado, 
+                inv.rendimentoPercentual, 
+                inv.dataAplicacao, 
+                inv.dataVencimento
+            );
+            
+            if (Math.abs(resultado.valorAtual - inv.valorAtual) > 0.01) {
+                inv.valorAtual = resultado.valorAtual;
+                inv.rentabilidadeAtual = resultado.rentabilidadeAtual;
+                inv.diasDecorridos = resultado.diasDecorridos;
                 inv.ultimaAtualizacao = hoje.toISOString();
+                atualizado = true;
+            }
+        } else if (dataVenc && hoje >= dataVenc) {
+            // Se já venceu, mantém o valor do vencimento
+            const resultadoVencimento = calcularRendimentoMP(
+                inv.valorAplicado,
+                inv.rendimentoPercentual,
+                inv.dataAplicacao,
+                inv.dataVencimento
+            );
+            if (Math.abs(resultadoVencimento.valorAtual - inv.valorAtual) > 0.01) {
+                inv.valorAtual = resultadoVencimento.valorAtual;
+                inv.rentabilidadeAtual = resultadoVencimento.rentabilidadeAtual;
                 atualizado = true;
             }
         }
     });
+    
     if (atualizado) {
         syncToCloud();
         renderInvestimentosMP();
