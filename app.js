@@ -286,37 +286,37 @@ function renderTransacoes() {
     document.getElementById('contadorRegistros').innerText = filtrados.length;
     const tbody = document.getElementById('tableBody');
     if (filtrados.length === 0) {
-        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada</td>stein';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📭 Nenhuma transação encontrada<\/td>stein';
         return;
     }
     let html = '';
     let gruposParcelas = {};
     if (receitas.length) {
-        html += `<tr class="bg-emerald-50 dark:bg-emerald-900/20"><td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">💰 RECEITAS</td></tr>`;
+        html += `<tr class="bg-emerald-50 dark:bg-emerald-900/20"><td colspan="5" class="py-2 px-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">💰 RECEITAS<\/td><\/tr>`;
         receitas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
             const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
             html += `<tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
-                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}</div></td>
-                <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"><\/button><\/td>
+                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}<\/div><div class="text-[8px] text-emerald-600">${t.metodo} • ${t.categoria}<\/div><\/td>
+                <td class="text-right font-black text-emerald-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}<\/td>
+                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦<\/button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕<\/button><\/td>
+              <\/tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
     if (despesas.length) {
-        html += `<tr class="bg-rose-50 dark:bg-rose-900/20"><td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">📉 DESPESAS</td></tr>`;
+        html += `<tr class="bg-rose-50 dark:bg-rose-900/20"><td colspan="5" class="py-2 px-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase">📉 DESPESAS<\/td><\/tr>`;
         gruposParcelas = {};
         despesas.forEach(t => {
             const idSeguro = String(t.id).replace(/'/g, "\\'");
             const chaveGrupo = t.descOriginal ? `${t.descOriginal}-${t.parcTotal}` : null;
             html += `<tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"></button></td>
-                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}</div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}</div></td>
-                <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦</button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button></td>
-              </tr>`;
+                <td class="py-4 px-2 w-8"><button onclick="togglePago('${idSeguro}')" class="w-5 h-5 rounded-full border-2 ${t.pago ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}"><\/button><\/td>
+                <td class="py-4 cursor-pointer" onclick="prepararEdicao('${idSeguro}')"><div class="font-bold">${t.desc} ${t.parc ? `<span class="text-[9px] opacity-40 ml-1">${t.parc}</span>` : ''}<\/div><div class="text-[8px] text-rose-500">${t.metodo} • ${t.categoria}<\/div><\/td>
+                <td class="text-right font-black text-rose-500">${t.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}<\/td>
+                <td class="text-right px-2">${chaveGrupo && !gruposParcelas[chaveGrupo] ? `<button onclick="excluirTodasParcelas('${t.descOriginal}', ${t.parcTotal})" class="text-slate-300 hover:text-amber-500 mr-2">📦<\/button>` : ''}<button onclick="excluir('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕<\/button><\/td>
+              <\/tr>`;
             if (chaveGrupo) gruposParcelas[chaveGrupo] = true;
         });
     }
@@ -340,15 +340,24 @@ function formatarDataLocal(date) {
 
 // Função para calcular alíquota do IOF (regressivo para CDB)
 function calcularIOF(diasDecorridos) {
-    if (diasDecorridos <= 30) {
-        const aliquotaIOF = Math.max(0, 96 - (diasDecorridos - 1) * 4);
-        return aliquotaIOF / 100;
-    }
-    return 0;
+    // IOF regressivo: 96% no primeiro dia, reduz 4% ao dia
+    // Após 30 dias, IOF = 0%
+    if (diasDecorridos <= 0) return 0;
+    if (diasDecorridos >= 30) return 0;
+    
+    // Para dias entre 1 e 29
+    // Fórmula: 96 - (dias - 1) * 4
+    const aliquotaPercentual = Math.max(0, 96 - (diasDecorridos - 1) * 4);
+    return aliquotaPercentual / 100;
 }
 
 // Função para calcular alíquota do Imposto de Renda (regressivo)
 function calcularIR(diasDecorridos) {
+    // IR regressivo para investimentos de renda fixa
+    // Até 180 dias: 22.5%
+    // 181 a 360 dias: 20%
+    // 361 a 720 dias: 17.5%
+    // Acima de 720 dias: 15%
     if (diasDecorridos <= 180) return 0.225;
     if (diasDecorridos <= 360) return 0.20;
     if (diasDecorridos <= 720) return 0.175;
@@ -557,7 +566,7 @@ function renderInvestimentosMP() {
     if (!tbody) return;
     
     if (investimentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado</td></tr>';
+        tbody.innerHTML = 'stein<td colspan="5" class="text-center py-12 opacity-50">📈 Nenhum investimento cadastrado<\/td>stein';
         return;
     }
     
@@ -587,33 +596,35 @@ function renderInvestimentosMP() {
         const resgateInfo = t.resgateImediato ? '🔓 Resgate imediato' : `⏳ ${t.resgate || 'Prazo'}`;
         const rendColor = t.rentabilidadeLiquida >= 0 ? 'text-emerald-500' : 'text-rose-500';
         
+        // Mostra o IOF apenas se for > 0
+        const iofDisplay = t.aliquotaIOF > 0 ? `IOF: ${t.aliquotaIOF.toFixed(0)}% | ` : '';
+        
         return `
         <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onclick="prepararEdicaoInvestMP('${idSeguro}')">
             <td class="py-4 px-3">
                 <div class="font-bold text-sm">${t.nome}</div>
                 <div class="text-[10px] text-slate-400">${t.tipo} ${t.garantiaFGC ? '• ✓ FGC' : ''}</div>
-              </td>
+               <\/td>
             <td class="py-4 text-right">
                 <div class="font-bold">${t.valorAtualLiquido.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
                 <div class="text-[10px] ${rendColor}">${t.rentabilidadeLiquida >= 0 ? '+' : ''}${t.rentabilidadeLiquida.toFixed(2)}%</div>
-               </td>
+               <\/td>
             <td class="py-4 text-right">
                 <div class="text-xs font-medium text-emerald-500">${t.rendimentoPercentual}% do CDI</div>
                 <div class="text-[9px] text-slate-400">${resgateInfo}</div>
-                <div class="text-[8px] text-slate-500 mt-1">IOF: ${t.aliquotaIOF.toFixed(0)}% | IR: ${t.aliquotaIR.toFixed(1)}%</div>
-               </td>
+                <div class="text-[8px] text-slate-500 mt-1">${iofDisplay}IR: ${t.aliquotaIR.toFixed(1)}%</div>
+               <\/td>
             <td class="py-4 text-right">
                 <div class="text-[10px] text-slate-400">Aplic: ${dataAplicFormatada}</div>
                 <div class="text-[10px] text-slate-400">Venc: ${dataVencFormatada}${diasRestantes}</div>
-               </td>
+               <\/td>
             <td class="text-right px-2">
-                <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕</button>
-               </td>
-           </tr>`;
+                <button onclick="event.stopPropagation(); excluirInvestimentoMP('${idSeguro}')" class="text-slate-300 hover:text-rose-500">✕<\/button>
+               <\/td>
+           <\/tr>`;
     }).join('');
 }
 
-// Função para abrir o modal de investimento
 function abrirModalInvestimento() {
     const modal = document.getElementById('modalInvestimento');
     if (modal) {
@@ -623,7 +634,6 @@ function abrirModalInvestimento() {
     }
 }
 
-// Função para fechar o modal de investimento
 function fecharModalInvestimento() {
     const modal = document.getElementById('modalInvestimento');
     if (modal) {
@@ -632,7 +642,6 @@ function fecharModalInvestimento() {
     }
 }
 
-// Função reset do formulário de investimento
 function resetFormInvestMP() {
     document.getElementById('editIdInvestMP').value = '';
     document.getElementById('inNomeInvest').value = '';
@@ -652,7 +661,6 @@ function resetFormInvestMP() {
     document.getElementById('btnCancelEditInvestMP').classList.add('hidden');
 }
 
-// Função para preparar edição de investimento
 function prepararEdicaoInvestMP(id) {
     const t = dados.investimentosMP.find(x => String(x.id) === String(id));
     if (!t) return showToast('Erro ao carregar investimento', 'error');
@@ -672,7 +680,6 @@ function prepararEdicaoInvestMP(id) {
     abrirModalInvestimento();
 }
 
-// Função para excluir investimento
 function excluirInvestimentoMP(id) {
     if (confirm("Excluir este investimento?")) {
         dados.investimentosMP = dados.investimentosMP.filter(t => String(t.id) !== String(id));
