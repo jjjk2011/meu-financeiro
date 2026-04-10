@@ -130,20 +130,21 @@
                             <div class="p-4 space-y-3">
                                 <input type="hidden" id="editId">
                                 
-                                <div class="flex gap-2">
-                                    <button type="button" onclick="document.getElementById('inType').value='income'; this.classList.add('bg-emerald-100','dark:bg-emerald-900/30','text-emerald-600'); this.nextElementSibling.classList.remove('bg-rose-100','dark:bg-rose-900/30','text-rose-600')" 
-                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600">
-                                        💰 RECEITA
-                                    </button>
-                                    <button type="button" onclick="document.getElementById('inType').value='expense'; this.classList.add('bg-rose-100','dark:bg-rose-900/30','text-rose-600'); this.previousElementSibling.classList.remove('bg-emerald-100','dark:bg-emerald-900/30','text-emerald-600')" 
-                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                        📉 DESPESA
-                                    </button>
-                                </div>
-                                <select id="inType" class="hidden">
-                                    <option value="income">💰 Receita (+)</option>
-                                    <option value="expense" selected>📉 Despesa (-)</option>
-                                </select>
+                              <!-- Substitua os botões de RECEITA/DESPESA por este bloco -->
+<div class="flex gap-2">
+    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" 
+        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
+        💰 RECEITA
+    </button>
+    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" 
+        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">
+        📉 DESPESA
+    </button>
+</div>
+<select id="inType" class="hidden">
+    <option value="income">💰 Receita (+)</option>
+    <option value="expense" selected>📉 Despesa (-)</option>
+</select>
                                 
                                 <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 
