@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Finance Pro</title>
     <meta name="theme-color" content="#10b981">
-    <meta name="description" content="Sistema de gestão financeira pessoal com sincronização em nuvem">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = { darkMode: 'class' }
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -14,339 +14,208 @@
         }
     </script>
     <style>
-        /* ===== ESTILOS GLOBAIS E CONSOLIDADOS ===== */
-        :root {
-            --muted: #6b7280;
-            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        #authScreen { display: flex; }
-        #appScreen { display: none; }
-        #cadastroForm { display: none; }
-        #loginForm { display: block; }
-        .loading-btn { opacity: 0.6; pointer-events: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-
-        /* ===== SCROLLBAR PERSONALIZADA ===== */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-        .dark ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-        .dark ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-
-        /* ===== CORES MELHORADAS PARA MODO CLARO E ESCURO ===== */
-        body {
-            background-color: #f8fafc;
-        }
-        .dark body {
-            background-color: #0f172a;
-        }
-        
-        .card {
-            background-color: #ffffff;
-            border-color: #e2e8f0;
-        }
-        .dark .card {
-            background-color: #1e293b;
-            border-color: #334155;
-        }
-        
-        select, input, textarea {
-            background-color: #f8fafc;
-            color: #1e293b;
-            border-color: #cbd5e1;
-        }
-        .dark select, .dark input, .dark textarea {
-            background-color: #0f172a;
-            color: #f1f5f9;
-            border-color: #475569;
-        }
-        
-        select option {
-            background-color: #ffffff;
-            color: #1e293b;
-        }
-        .dark select option {
-            background-color: #1e293b;
-            color: #f1f5f9;
-        }
-        
-        ::placeholder {
-            color: #94a3b8;
-        }
-        .dark ::placeholder {
-            color: #64748b;
-        }
-        
-        h1, h2, h3, h4, .title {
-            color: #0f172a;
-        }
-        .dark h1, .dark h2, .dark h3, .dark h4, .dark .title {
-            color: #f1f5f9;
-        }
-        
-        .text-secondary {
-            color: #475569;
-        }
-        .dark .text-secondary {
-            color: #94a3b8;
-        }
-        
-        .border-custom {
-            border-color: #e2e8f0;
-        }
-        .dark .border-custom {
-            border-color: #334155;
-        }
-        
-        a, .link {
-            color: #10b981;
-        }
-        .dark a, .dark .link {
-            color: #34d399;
-        }
-        
-        table {
-            color: #1e293b;
-        }
-        .dark table {
-            color: #e2e8f0;
-        }
-        
-        .table-row {
-            border-bottom-color: #f1f5f9;
-        }
-        .dark .table-row {
-            border-bottom-color: #334155;
-        }
-        
-        .table-row:hover {
-            background-color: #f1f5f9;
-        }
-        .dark .table-row:hover {
-            background-color: #334155;
-        }
-        
-        .badge-success {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        .dark .badge-success {
-            background-color: #064e3b;
-            color: #a7f3d0;
-        }
-        
-        .badge-danger {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-        .dark .badge-danger {
-            background-color: #7f1d1d;
-            color: #fecaca;
-        }
-
-        /* ===== ANIMAÇÕES ===== */
         .fade-enter { opacity: 0; transform: translateY(10px); }
-        .fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
         
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:hover { transform: translateY(-1px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
         
-        .spinner { width: 24px; height: 24px; border: 3px solid rgba(16,185,129,0.2); border-radius: 50%; border-top-color: #10b981; animation: spin 0.8s linear infinite; }
-        .fade-in { animation: fadeIn 0.5s ease forwards; }
-
-        /* ===== COMPONENTES ===== */
-        .badge-pill { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0; transform: translateY(-6px); transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.2, 1); }
-        .badge-pill.badge-visible { opacity: 1; transform: translateY(0); background: #eff6ff; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-        .dark .badge-pill.badge-visible { background: #1e293b; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-track { background: #1e293b; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
         
-        .table-wrap thead th { position: sticky; top: 0; background: white; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .dark .table-wrap thead th { background: #0f172a; }
+        input, select, textarea { transition: all 0.2s ease; }
+        input:focus, select:focus, textarea:focus { outline: none; ring: 2px solid #10b981; }
         
-        .table-summary td { background: #f0f9ff; font-weight: 600; padding: 12px; border-bottom: 1px solid rgba(15,23,42,0.08); }
-        .dark .table-summary td { background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        
-        .btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: transparent; border: none; cursor: pointer; transition: var(--transition); }
-        .btn-icon:hover { background: #f1f5f9; transform: scale(1.1); }
-        .dark .btn-icon:hover { background: #1e293b; }
-        
-        .hover-card { transition: var(--transition); }
-        .hover-card:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
-        
-        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #10b981; color: white; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); z-index: 1000; animation: slideUp 0.3s ease-out; }
-        
-        .input-focus-effect { transition: var(--transition); }
-        .input-focus-effect:focus { box-shadow: 0 0 0 3px rgba(16,185,129,0.2); border-color: #10b981; }
-        
-        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 8px; font-weight: 600; text-transform: uppercase; }
-        .status-badge.pago { background: #d1fae5; color: #065f46; }
-        .status-badge.pendente { background: #fee2e2; color: #991b1b; }
-        .dark .status-badge.pago { background: #064e3b; color: #d1fae5; }
-        .dark .status-badge.pendente { background: #7f1d1d; color: #fee2e2; }
-        
-        .glass { background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18); }
-        .dark .glass { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); }
-        
-        .tooltip { position: relative; }
-        .tooltip:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding: 4px 8px; background: #1e293b; color: white; font-size: 10px; border-radius: 6px; white-space: nowrap; z-index: 50; margin-bottom: 6px; }
-        
-        @media (max-width: 768px) { 
-            .hide-mobile { display: none; } 
-            .text-mobile-sm { font-size: 12px; } 
-            .table-wrap { margin: 0 -16px; padding: 0 16px; } 
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        .animate-slide-in { animation: slideIn 0.3s ease forwards; }
         
-        @media print { 
-            .no-print { display: none !important; } 
-            body { background: white; color: black; } 
-            .print-only { display: block !important; } 
-        }
+        .transaction-table tr { transition: all 0.15s ease; }
+        .transaction-table tr:hover { background-color: #f8fafc; }
+        .dark .transaction-table tr:hover { background-color: #1e293b; }
+        
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 9px; font-weight: 600; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
     <!-- Tela de Autenticação -->
-    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
-            <h1 class="font-black text-2xl text-slate-800 dark:text-white mb-2 uppercase italic">💰 CLOUD FINANCE</h1>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 uppercase font-bold tracking-widest" id="authSubtitle">Acesse sua conta</p>
-            
-            <div id="loginForm">
-                <input id="authEmail" type="email" placeholder="E-mail" value=""
-                       class="w-full p-4 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                <input id="authPass" type="password" placeholder="Senha" value=""
-                       class="w-full p-4 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                <div class="flex gap-2">
-                    <button onclick="handleLogin()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">ENTRAR</button>
-                    <button onclick="mostrarCadastro()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">CADASTRAR</button>
-                </div>
+    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-slide-in">
+            <div class="bg-emerald-600 px-5 py-6 text-center">
+                <h1 class="font-black text-2xl text-white mb-0.5">☁️ CLOUD FINANCE</h1>
+                <p class="text-emerald-100 text-[10px] font-bold tracking-wider" id="authSubtitle">ACESSE SUA CONTA</p>
             </div>
-            
-            <div id="cadastroForm">
-                <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
-                       class="w-full p-4 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                <input id="cadastroEmail" type="email" placeholder="E-mail" 
-                       class="w-full p-4 border border-slate-300 dark:border-slate-600 rounded-2xl mb-3 outline-none text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" 
-                       class="w-full p-4 border border-slate-300 dark:border-slate-600 rounded-2xl mb-4 outline-none text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                <div class="flex gap-2">
-                    <button onclick="handleSignup()" class="flex-grow bg-emerald-600 text-white font-bold py-4 rounded-2xl hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg">CRIAR CONTA</button>
-                    <button onclick="mostrarLogin()" class="flex-grow bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-4 rounded-2xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs uppercase tracking-wider">VOLTAR</button>
+            <div class="p-6">
+                <div id="loginForm">
+                    <input id="authEmail" type="email" placeholder="E-mail" value="teste@teste.com"
+                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
+                    <input id="authPass" type="password" placeholder="Senha" value="123456"
+                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
+                    <div class="flex gap-2">
+                        <button onclick="handleLogin()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition text-sm">ENTRAR</button>
+                        <button onclick="mostrarCadastro()" class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl hover:bg-slate-200 transition text-sm">CADASTRAR</button>
+                    </div>
                 </div>
+                <div id="cadastroForm" style="display: none;">
+                    <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
+                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
+                    <input id="cadastroEmail" type="email" placeholder="E-mail" 
+                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
+                    <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" 
+                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700">
+                    <div class="flex gap-2">
+                        <button onclick="handleSignup()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition text-sm">CRIAR CONTA</button>
+                        <button onclick="mostrarLogin()" class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl hover:bg-slate-200 transition text-sm">VOLTAR</button>
+                    </div>
+                </div>
+                <p class="text-center text-[9px] text-slate-400 dark:text-slate-500 mt-5">Use qualquer e-mail/senha (mínimo 6 caracteres)</p>
             </div>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-4">Use qualquer e-mail/senha para teste (mínimo 6 caracteres)</p>
         </div>
     </div>
 
     <!-- App Principal -->
-    <div id="appScreen" class="p-4 md:p-8">
-        <div class="max-w-7xl mx-auto">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950 text-white p-4 md:p-6 mb-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+    <div id="appScreen" class="min-h-screen" style="display: none;">
+        <!-- Header Superior -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-900 dark:to-slate-950 border-b border-slate-700/50 sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto px-4 py-2.5 flex justify-between items-center">
                 <div>
-                    <h1 class="font-black text-xl text-emerald-400 uppercase tracking-tighter flex items-center gap-2">
-                        ☁️ CLOUD FINANCE <span class="text-[8px] bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full">PRO</span>
+                    <h1 class="font-black text-lg tracking-tight">
+                        <span class="text-emerald-400">☁️ CLOUD FINANCE</span>
+                        <span class="text-white text-[9px] bg-emerald-500/20 px-1.5 py-0.5 rounded-full ml-1.5">PRO</span>
                     </h1>
-                    <p id="userDisplay" class="text-[10px] text-slate-300 dark:text-slate-400 uppercase font-bold tracking-widest"></p>
+                    <p id="userDisplay" class="text-[9px] text-slate-400 mt-0.5"></p>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="toggleDarkMode()" class="bg-slate-700 hover:bg-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 px-4 py-2 rounded-xl text-sm transition">🌓</button>
-                    <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase">📄 PDF</button>
-                    <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase">🚪 Sair</button>
+                <div class="flex gap-1.5">
+                    <button onclick="toggleDarkMode()" class="bg-slate-700/50 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs transition">🌓</button>
+                    <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition">📄 PDF</button>
+                    <button onclick="handleLogout()" class="bg-rose-600/80 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition">🚪 SAIR</button>
                 </div>
             </div>
+        </div>
 
-            <!-- Abas -->
-            <div class="flex gap-2 mb-6">
-                <button id="tabTransacoes" onclick="mudarAba('transacoes')" class="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">💰 TRANSAÇÕES</button>
-                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" class="flex-1 md:flex-none px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 flex items-center justify-center gap-2">📈 INVESTIMENTOS</button>
+        <div class="max-w-6xl mx-auto px-4 py-5">
+            <!-- Abas de navegação -->
+            <div class="flex gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl mb-5 w-fit">
+                <button id="tabTransacoes" onclick="mudarAba('transacoes')" 
+                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all bg-emerald-600 text-white shadow-md">
+                    💰 TRANSAÇÕES
+                </button>
+                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" 
+                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">
+                    📈 INVESTIMENTOS
+                </button>
+                <button id="tabMetas" onclick="mudarAba('metas')" 
+                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">
+                    🎯 METAS
+                </button>
             </div>
 
             <!-- Área de Transações -->
             <div id="areaTransacoes">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Formulário Transações -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800">
-                            <h3 id="formTitle" class="font-bold mb-4 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 pb-2">➕ NOVO REGISTRO</h3>
-                            <div class="space-y-3">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <!-- Coluna Esquerda - Formulário -->
+                    <div class="lg:col-span-5 space-y-5">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5">
+                                <h3 class="font-bold text-white text-[11px] uppercase tracking-wider">➕ NOVO REGISTRO</h3>
+                            </div>
+                            <div class="p-4 space-y-3">
                                 <input type="hidden" id="editId">
-                                <select id="inType" class="w-full p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                                
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="document.getElementById('inType').value='income'; this.classList.add('bg-emerald-100','dark:bg-emerald-900/30','text-emerald-600'); this.nextElementSibling.classList.remove('bg-rose-100','dark:bg-rose-900/30','text-rose-600')" 
+                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600">
+                                        💰 RECEITA
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('inType').value='expense'; this.classList.add('bg-rose-100','dark:bg-rose-900/30','text-rose-600'); this.previousElementSibling.classList.remove('bg-emerald-100','dark:bg-emerald-900/30','text-emerald-600')" 
+                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                        📉 DESPESA
+                                    </button>
+                                </div>
+                                <select id="inType" class="hidden">
                                     <option value="income">💰 Receita (+)</option>
-                                    <option value="expense">📉 Despesa (-)</option>
+                                    <option value="expense" selected>📉 Despesa (-)</option>
                                 </select>
-                                <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                                
+                                <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="inVal" type="number" placeholder="Valor" step="0.01" class="p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <input id="inParc" type="number" placeholder="Parcelas" value="1" min="1" max="24" class="p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                                    <input id="inVal" type="number" placeholder="Valor" step="0.01" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                    <input id="inParc" type="number" placeholder="Parcelas" min="1" max="48" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 </div>
-                                <select id="inCat" class="w-full p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <option>ALIMENTAÇÃO</option>
-                                </select>
-                                <select id="inMeth" class="w-full p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <option>DINHEIRO</option>
-                                </select>
+                                
                                 <div class="grid grid-cols-2 gap-2">
-                                    <select id="inMonth" class="p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"></select>
-                                    <input id="inYear" type="number" placeholder="Ano" class="p-3 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                                    <select id="inCat" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"></select>
+                                    <select id="inMeth" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"></select>
                                 </div>
-                                <button onclick="adicionar()" id="btnSave" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs uppercase tracking-wider transition">💾 SALVAR NA NUVEM</button>
-                                <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-3 rounded-2xl text-xs uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">← CANCELAR</button>
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="inMonth" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"></select>
+                                    <input id="inYear" type="number" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                </div>
+                                
+                                <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider hover:bg-black dark:hover:bg-emerald-500 transition">
+                                    💾 SALVAR NA NUVEM
+                                </button>
+                                <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-1.5 rounded-lg text-[10px] transition">
+                                    ← CANCELAR EDIÇÃO
+                                </button>
                             </div>
                         </div>
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800">
-                            <h3 class="font-bold mb-3 text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-widest">⚙️ GERENCIAR</h3>
+                        
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
+                            <h4 class="font-bold text-[10px] uppercase tracking-wider text-slate-400 mb-2">📋 GERENCIAR</h4>
                             <div class="space-y-2">
                                 <div class="flex gap-2">
-                                    <input id="inNewCat" type="text" placeholder="Nova categoria" class="flex-1 p-2 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <button onclick="addItemLista('categorias', 'inNewCat')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+</button>
+                                    <input id="newCat" type="text" placeholder="Nova categoria" class="flex-1 p-2 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                                    <button onclick="addItemLista('categorias', 'newCat')" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-[11px] font-bold">+</button>
                                 </div>
                                 <div class="flex gap-2">
-                                    <input id="inNewMeth" type="text" placeholder="Novo método" class="flex-1 p-2 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <button onclick="addItemLista('metodos', 'inNewMeth')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+</button>
+                                    <input id="newMeth" type="text" placeholder="Novo método" class="flex-1 p-2 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                                    <button onclick="addItemLista('metodos', 'newMeth')" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-[11px] font-bold">+</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Tabela de Transações -->
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-                        <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center flex-wrap gap-3">
-                            <div class="flex gap-2">
-                                <select id="fMonth" class="p-2 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"></select>
-                                <input id="fYear" type="number" placeholder="Ano" class="w-20 p-2 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                    
+                    <div class="lg:col-span-7 space-y-5">
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950 rounded-xl p-5 text-white shadow-md">
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">SALDO DO MÊS</p>
+                            <h2 id="totalBalance" class="text-4xl font-black mb-3">R$ 0,00</h2>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-emerald-500/20 rounded-lg p-2.5">
+                                    <p class="text-[9px] uppercase text-emerald-300">Receitas</p>
+                                    <p id="totalReceitas" class="text-base font-bold text-emerald-400">R$ 0,00</p>
+                                </div>
+                                <div class="bg-rose-500/20 rounded-lg p-2.5">
+                                    <p class="text-[9px] uppercase text-rose-300">Despesas</p>
+                                    <p id="totalDespesas" class="text-base font-bold text-rose-400">R$ 0,00</p>
+                                </div>
                             </div>
-                            <input id="searchInput" type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="flex-1 min-w-48 p-2 rounded-lg text-xs outline-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                    <tr><th class="py-3 px-3 font-medium">Descrição</th><th class="py-3 text-right font-medium">Valor</th><th class="py-3 font-medium">Categoria</th><th class="py-3 font-medium">Status</th><th class="py-3 w-12"></th></tr>
-                                </thead>
-                                <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                            </table>
+                        
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
+                                <h3 class="font-bold text-slate-700 dark:text-slate-300 text-xs">📋 HISTÓRICO <span id="contadorRegistros" class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full ml-1">0</span></h3>
+                                <div class="flex gap-1.5">
+                                    <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 w-28">
+                                    <select id="fMonth" onchange="render()" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"></select>
+                                    <input id="fYear" type="number" onchange="render()" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 w-16">
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                                <table class="w-full text-left transaction-table text-sm">
+                                    <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -354,72 +223,165 @@
 
             <!-- Área de Investimentos -->
             <div id="areaInvestimentos" style="display: none;">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 rounded-3xl shadow-xl">
-                            <p class="text-xs opacity-80">💰 Saldo investido</p>
-                            <h2 id="totalInvestidoMP" class="text-3xl font-black">R$ 0,00</h2>
-                            <div class="mt-4 flex justify-between items-center">
-                                <div><p class="text-[10px] opacity-80">Valor atual</p><p id="totalAtualMP" class="text-xl font-bold">R$ 0,00</p></div>
-                                <div class="text-right"><p class="text-[10px] opacity-80">Rendimento</p><p id="totalRendimentoMP" class="text-xl font-bold">R$ 0,00</p></div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <div class="lg:col-span-5 space-y-5">
+                        <div class="bg-gradient-to-br from-emerald-800 to-emerald-900 rounded-xl p-5 text-white shadow-md">
+                            <p class="text-[10px] uppercase tracking-wider text-emerald-300 mb-0.5">💰 TOTAL INVESTIDO</p>
+                            <h2 id="totalInvestidoMP" class="text-2xl font-black mb-2">R$ 0,00</h2>
+                            <div class="grid grid-cols-2 gap-3 mt-3 pt-2 border-t border-emerald-700/50">
+                                <div>
+                                    <p class="text-[9px] text-emerald-300">VALOR ATUAL</p>
+                                    <p id="totalAtualMP" class="text-base font-bold">R$ 0,00</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] text-emerald-300">RENDIMENTO</p>
+                                    <p id="totalRendimentoMP" class="text-base font-bold">R$ 0,00</p>
+                                </div>
                             </div>
-                            <div class="mt-3 pt-3 border-t border-white/20"><p class="text-[10px] opacity-80">Rentabilidade total</p><p id="rentabilidadeTotalMP" class="text-lg font-bold">0,00%</p></div>
+                            <div class="mt-2 pt-1">
+                                <p class="text-[9px] text-emerald-300">RENTABILIDADE TOTAL</p>
+                                <p id="rentabilidadeTotalMP" class="text-lg font-bold">0,00%</p>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="abrirModalInvestimento()" class="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl font-bold text-xs uppercase transition shadow-lg flex items-center justify-center gap-2">➕ INVESTIR</button>
-                            <button onclick="atualizarRendimentosDiarios()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white p-4 rounded-2xl font-bold text-xs uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center gap-2">🔄 ATUALIZAR</button>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="abrirModalInvestimento()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-xs uppercase transition flex items-center justify-center gap-1">
+                                ➕ INVESTIR
+                            </button>
+                            <button onclick="atualizarRendimentosDiarios()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-2 rounded-lg font-bold text-xs uppercase hover:bg-slate-300 transition flex items-center justify-center gap-1">
+                                🔄 ATUALIZAR
+                            </button>
                         </div>
-                        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800">
-                            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-2">📈 Como funciona?</p>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">Os rendimentos são calculados diariamente com base no CDI atual (13,15% a.a.). O valor é atualizado automaticamente a cada 6 horas.</p>
+                        
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
+                            <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-1.5">📈 Como funciona?</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">Rendimentos calculados com CDI (13,15% a.a.). Atualização automática a cada 6 horas.</p>
                         </div>
                     </div>
-                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-                        <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">📈 SEUS INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">0</span></h3>
-                            <button onclick="abrirModalInvestimento()" class="text-[10px] text-emerald-500 dark:text-emerald-400 font-bold">+ Novo</button>
+                    
+                    <div class="lg:col-span-7">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700 dark:text-slate-300 text-xs">📈 INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full ml-1">0</span></h3>
+                                <button onclick="abrirModalInvestimento()" class="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">+ NOVO</button>
+                            </div>
+                            <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/50 sticky top-0">
+                                        <tr class="text-slate-500 dark:text-slate-400 text-[10px]">
+                                            <th class="py-2.5 px-3 font-medium">INVESTIMENTO</th>
+                                            <th class="py-2.5 text-right font-medium">VALOR</th>
+                                            <th class="py-2.5 text-right font-medium">RENDIMENTO</th>
+                                            <th class="py-2.5 text-right font-medium">DATAS</th>
+                                            <th class="py-2.5 w-6"></th>
+                                         </tr>
+                                    </thead>
+                                    <tbody id="investTableBodyMP" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                                    <tr><th class="py-3 px-3 font-medium">Investimento</th><th class="py-3 text-right font-medium">Valor</th><th class="py-3 text-right font-medium">Rendimento</th><th class="py-3 text-right font-medium">Datas</th><th class="py-3 w-8"></th> </thead>
-                                <tbody id="investTableBodyMP" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-                            </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área de Metas -->
+            <div id="areaMetas" style="display: none;">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <div class="lg:col-span-5">
+                        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div class="bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-2.5">
+                                <h3 class="font-bold text-white text-[11px] uppercase tracking-wider">🎯 NOVA META</h3>
+                            </div>
+                            <div class="p-4 space-y-3">
+                                <input type="text" id="metaNome" placeholder="Nome da meta" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                <textarea id="metaDescricao" rows="2" placeholder="Descrição (opcional)" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm resize-none"></textarea>
+                                <input type="number" id="metaValorAlvo" placeholder="Valor alvo" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                <select id="metaCategoria" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                    <option value="VIAGEM">✈️ VIAGEM</option>
+                                    <option value="CARRO">🚗 CARRO</option>
+                                    <option value="CASA">🏠 CASA</option>
+                                    <option value="EDUCACAO">📚 EDUCAÇÃO</option>
+                                    <option value="INVESTIMENTO">💰 INVESTIMENTO</option>
+                                </select>
+                                <input type="date" id="metaDataAlvo" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                                <div class="flex gap-2">
+                                    <input type="color" id="metaCor" value="#10b981" class="w-10 h-10 rounded-lg border border-slate-200 cursor-pointer">
+                                    <button onclick="criarMeta()" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase transition">CRIAR META</button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <div class="lg:col-span-7 space-y-5">
+                        <div class="bg-gradient-to-br from-violet-800 to-violet-900 rounded-xl p-5 text-white shadow-md">
+                            <p class="text-[10px] uppercase tracking-wider text-violet-300 mb-0.5">🎯 TOTAL POUPADO</p>
+                            <h2 id="totalPoupadoMetas" class="text-3xl font-black mb-2">R$ 0,00</h2>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-[9px] mb-0.5">
+                                    <span>PROGRESSO GERAL</span>
+                                    <span id="progressoGeralMetas">0%</span>
+                                </div>
+                                <div class="h-1.5 bg-violet-700/50 rounded-full overflow-hidden">
+                                    <div id="barraProgressoGeral" class="h-full bg-violet-400 rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="listaMetas" class="space-y-2 max-h-[400px] overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="border-t border-slate-200 dark:border-slate-800 mt-6 py-3 text-center">
+            <p class="text-[9px] text-slate-400">Cloud Finance Pro v2.0 - Dados sincronizados com Firebase</p>
+        </div>
     </div>
 
-    <!-- Modal para Adicionar/Editar Investimento -->
+    <!-- Modal Investimento -->
     <div id="modalInvestimento" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) fecharModalInvestimento()">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h3 id="formTitleInvestMP" class="font-bold text-slate-800 dark:text-slate-200">💰 NOVO INVESTIMENTO</h3>
-                <button onclick="fecharModalInvestimento()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xl">&times;</button>
+        <div class="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div class="sticky top-0 bg-white dark:bg-slate-900 p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">💰 NOVO INVESTIMENTO</h3>
+                <button onclick="fecharModalInvestimento()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
             </div>
-            <div class="p-5 space-y-4">
+            <div class="p-4 space-y-3">
                 <input type="hidden" id="editIdInvestMP">
-                <input id="inNomeInvest" type="text" placeholder="Nome do investimento (ex: CDB Mercado Livre)" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
-                <div class="grid grid-cols-2 gap-3">
-                    <select id="inTipoInvestMP" class="p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"><option value="Renda Fixa">💰 Renda Fixa</option><option value="Fundos">📊 Fundos</option><option value="Ações">📈 Ações</option></select>
-                    <input id="inValorAplicado" type="number" placeholder="Valor aplicado" step="0.01" class="p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500">
+                <input id="inNomeInvest" type="text" placeholder="Nome do investimento" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="inTipoInvestMP" class="p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                        <option value="Renda Fixa">💰 Renda Fixa</option>
+                        <option value="Fundos">📊 Fundos</option>
+                        <option value="Ações">📈 Ações</option>
+                    </select>
+                    <input id="inValorAplicado" type="number" placeholder="Valor aplicado" step="0.01" class="p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Rendimento (% do CDI)</label><input id="inRendimentoPercentual" type="number" placeholder="106" step="0.1" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"></div>
-                    <div><label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Resgate</label><input id="inResgate" type="text" placeholder="Ex: Em 6 meses" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[9px] text-slate-500 block mb-0.5">Rendimento (% CDI)</label>
+                        <input id="inRendimentoPercentual" type="number" placeholder="106" step="0.1" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-slate-500 block mb-0.5">Resgate</label>
+                        <input id="inResgate" type="text" placeholder="Ex: Em 6 meses" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Data da aplicação</label><input id="inDataAplicacao" type="date" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"></div>
-                    <div><label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Data de vencimento</label><input id="inDataVencimento" type="date" class="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[9px] text-slate-500 block mb-0.5">Data aplicação</label>
+                        <input id="inDataAplicacao" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                    </div>
+                    <div>
+                        <label class="text-[9px] text-slate-500 block mb-0.5">Data vencimento</label>
+                        <input id="inDataVencimento" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
+                    </div>
                 </div>
-                <div class="flex gap-4 items-center">
-                    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input id="inResgateImediato" type="checkbox" class="w-4 h-4"><span class="text-xs">🔓 Resgate imediato</span></label>
-                    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input id="inGarantiaFGC" type="checkbox" checked class="w-4 h-4"><span class="text-xs">✓ Garantia FGC</span></label>
+                <div class="flex gap-3">
+                    <label class="flex items-center gap-1.5 text-xs"><input id="inResgateImediato" type="checkbox"> 🔓 Resgate imediato</label>
+                    <label class="flex items-center gap-1.5 text-xs"><input id="inGarantiaFGC" type="checkbox" checked> ✓ FGC</label>
                 </div>
-                <button onclick="adicionarInvestimentoMP()" id="btnSaveInvestMP" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl text-xs uppercase tracking-widest">💾 SALVAR INVESTIMENTO</button>
-                <button id="btnCancelEditInvestMP" onclick="resetFormInvestMP()" class="hidden w-full mt-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-3 rounded-xl text-[9px] uppercase hover:bg-slate-300 dark:hover:bg-slate-600 transition">← Cancelar Edição</button>
+                <button onclick="adicionarInvestimentoMP()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase">💾 SALVAR</button>
+                <button id="btnCancelEditInvestMP" onclick="resetFormInvestMP()" class="hidden w-full bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-[10px]">← CANCELAR</button>
             </div>
         </div>
     </div>
@@ -444,6 +406,157 @@
         window.auth = getAuth(app);
         window.db = getFirestore(app);
         window.fb_funcs = { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, doc, setDoc, getDoc };
+    </script>
+
+    <script>
+        let metas = [];
+
+        function carregarMetas() {
+            const saved = localStorage.getItem('cloudFinance_metas');
+            if (saved) metas = JSON.parse(saved);
+            renderMetas();
+        }
+
+        function salvarMetas() {
+            localStorage.setItem('cloudFinance_metas', JSON.stringify(metas));
+            renderMetas();
+        }
+
+        function criarMeta() {
+            const nome = document.getElementById('metaNome').value.trim();
+            const valorAlvo = parseFloat(document.getElementById('metaValorAlvo').value);
+            
+            if (!nome || nome.length < 3) return showToast('Digite um nome para a meta', 'error');
+            if (isNaN(valorAlvo) || valorAlvo <= 0) return showToast('Valor alvo inválido', 'error');
+            
+            metas.push({
+                id: Date.now().toString(),
+                nome: nome,
+                descricao: document.getElementById('metaDescricao').value,
+                valorAlvo: valorAlvo,
+                valorAtual: 0,
+                categoria: document.getElementById('metaCategoria').value,
+                dataAlvo: document.getElementById('metaDataAlvo').value,
+                cor: document.getElementById('metaCor').value,
+                criadoEm: new Date().toISOString()
+            });
+            
+            salvarMetas();
+            document.getElementById('metaNome').value = '';
+            document.getElementById('metaDescricao').value = '';
+            document.getElementById('metaValorAlvo').value = '';
+            document.getElementById('metaDataAlvo').value = '';
+            showToast('Meta criada!', 'success');
+        }
+
+        function renderMetas() {
+            const container = document.getElementById('listaMetas');
+            if (!container) return;
+            
+            const totalPoupado = metas.reduce((sum, m) => sum + (m.valorAtual || 0), 0);
+            const totalAlvo = metas.reduce((sum, m) => sum + m.valorAlvo, 0);
+            const progressoGeral = totalAlvo > 0 ? (totalPoupado / totalAlvo) * 100 : 0;
+            
+            document.getElementById('totalPoupadoMetas').innerText = totalPoupado.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            document.getElementById('progressoGeralMetas').innerText = `${progressoGeral.toFixed(1)}%`;
+            document.getElementById('barraProgressoGeral').style.width = `${Math.min(progressoGeral, 100)}%`;
+            
+            if (metas.length === 0) {
+                container.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 text-center">
+                    <p class="text-slate-400 text-xs">Nenhuma meta criada</p>
+                    <p class="text-slate-400 text-[10px] mt-1">Use o formulário ao lado para criar sua primeira meta</p>
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = metas.map(meta => {
+                const progresso = (meta.valorAtual / meta.valorAlvo) * 100;
+                const restante = meta.valorAlvo - meta.valorAtual;
+                return `
+                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">${meta.nome}</h4>
+                                ${meta.descricao ? `<p class="text-[10px] text-slate-400">${meta.descricao}</p>` : ''}
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="adicionarParaMeta('${meta.id}')" class="text-emerald-500 text-[10px] font-bold">💰 ADICIONAR</button>
+                                <button onclick="excluirMeta('${meta.id}')" class="text-rose-500 text-[10px]">✕</button>
+                            </div>
+                        </div>
+                        <div class="mb-1.5">
+                            <div class="flex justify-between text-[9px] text-slate-500 mb-0.5">
+                                <span>R$ ${meta.valorAtual.toLocaleString('pt-BR')}</span>
+                                <span>R$ ${meta.valorAlvo.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all" style="width: ${Math.min(progresso, 100)}%; background-color: ${meta.cor}"></div>
+                            </div>
+                            <p class="text-[9px] text-right mt-0.5 text-slate-400">${progresso.toFixed(1)}% • Falta R$ ${restante.toLocaleString('pt-BR')}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function adicionarParaMeta(id) {
+            const valor = parseFloat(prompt('Quanto você quer adicionar?', '0'));
+            if (isNaN(valor) || valor <= 0) return;
+            const meta = metas.find(m => m.id === id);
+            if (meta) {
+                meta.valorAtual = (meta.valorAtual || 0) + valor;
+                salvarMetas();
+                showToast(`R$ ${valor.toLocaleString('pt-BR')} adicionado!`, 'success');
+            }
+        }
+
+        function excluirMeta(id) {
+            if (confirm('Excluir esta meta?')) {
+                metas = metas.filter(m => m.id !== id);
+                salvarMetas();
+                showToast('Meta excluída', 'success');
+            }
+        }
+
+        const mudarAbaOriginal = window.mudarAba;
+        window.mudarAba = function(aba) {
+            activeTab = aba;
+            const tabs = ['transacoes', 'investimentos', 'metas'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (btn) {
+                    btn.classList.remove('bg-emerald-600', 'text-white');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-300');
+                }
+            });
+            
+            document.getElementById('areaTransacoes').style.display = 'none';
+            document.getElementById('areaInvestimentos').style.display = 'none';
+            document.getElementById('areaMetas').style.display = 'none';
+            
+            if (aba === 'transacoes') {
+                document.getElementById('tabTransacoes').classList.add('bg-emerald-600', 'text-white');
+                document.getElementById('areaTransacoes').style.display = 'block';
+                resetForm();
+                render();
+            } else if (aba === 'investimentos') {
+                document.getElementById('tabInvestimentos').classList.add('bg-emerald-600', 'text-white');
+                document.getElementById('areaInvestimentos').style.display = 'block';
+                resetFormInvestMP();
+                render();
+                setTimeout(() => renderInvestimentosMP(), 100);
+            } else if (aba === 'metas') {
+                document.getElementById('tabMetas').classList.add('bg-emerald-600', 'text-white');
+                document.getElementById('areaMetas').style.display = 'block';
+                carregarMetas();
+            }
+        };
+        
+        setTimeout(() => carregarMetas(), 500);
+        
+        window.criarMeta = criarMeta;
+        window.adicionarParaMeta = adicionarParaMeta;
+        window.excluirMeta = excluirMeta;
     </script>
 </body>
 </html>
