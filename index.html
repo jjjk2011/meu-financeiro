@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>Cloud Finance Pro</title>
     <meta name="theme-color" content="#10b981">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = { darkMode: 'class' }
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -14,56 +14,43 @@
         }
     </script>
     <style>
-        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        .fade-enter { opacity: 0; transform: translateY(10px); }
-        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
-        .card-hover { transition: all 0.2s ease; }
-        .card-hover:hover { transform: translateY(-1px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark ::-webkit-scrollbar-track { background: #1e293b; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
         input, select, textarea { transition: all 0.2s ease; }
         input:focus, select:focus, textarea:focus { outline: none; ring: 2px solid #10b981; }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-in { animation: slideIn 0.3s ease forwards; }
-        .transaction-table tr { transition: all 0.15s ease; }
-        .transaction-table tr:hover { background-color: #f8fafc; }
-        .dark .transaction-table tr:hover { background-color: #1e293b; }
+        .transaction-row:hover { background-color: #f8fafc; }
+        .dark .transaction-row:hover { background-color: #1e293b; }
         .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 9px; font-weight: 600; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- Tela de Autenticação -->
-    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-slide-in">
-            <div class="bg-emerald-600 px-5 py-6 text-center">
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-emerald-600 px-6 py-6 text-center">
                 <h1 class="font-black text-2xl text-white mb-0.5">☁️ CLOUD FINANCE</h1>
                 <p class="text-emerald-100 text-[10px] font-bold tracking-wider" id="authSubtitle">ACESSE SUA CONTA</p>
             </div>
             <div class="p-6">
                 <div id="loginForm">
-                    <input id="authEmail" type="email" placeholder="E-mail" value="teste@teste.com"
-                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
-                    <input id="authPass" type="password" placeholder="Senha" value="123456"
-                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
+                    <input id="authEmail" type="email" placeholder="E-mail" value="teste@teste.com" class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
+                    <input id="authPass" type="password" placeholder="Senha" value="123456" class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-emerald-500">
                     <div class="flex gap-2">
                         <button onclick="handleLogin()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition text-sm">ENTRAR</button>
                         <button onclick="mostrarCadastro()" class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl hover:bg-slate-200 transition text-sm">CADASTRAR</button>
                     </div>
                 </div>
                 <div id="cadastroForm" style="display: none;">
-                    <input id="cadastroNome" type="text" placeholder="Seu nome completo" 
-                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
-                    <input id="cadastroEmail" type="email" placeholder="E-mail" 
-                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
-                    <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" 
-                           class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700">
+                    <input id="cadastroNome" type="text" placeholder="Seu nome completo" class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
+                    <input id="cadastroEmail" type="email" placeholder="E-mail" class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-3 text-sm bg-slate-50 dark:bg-slate-700">
+                    <input id="cadastroPass" type="password" placeholder="Senha (mínimo 6 caracteres)" class="w-full p-3 border border-slate-200 dark:border-slate-600 rounded-xl mb-4 text-sm bg-slate-50 dark:bg-slate-700">
                     <div class="flex gap-2">
                         <button onclick="handleSignup()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition text-sm">CRIAR CONTA</button>
                         <button onclick="mostrarLogin()" class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white font-bold py-2.5 rounded-xl hover:bg-slate-200 transition text-sm">VOLTAR</button>
@@ -74,11 +61,11 @@
         </div>
     </div>
 
-    <!-- App Principal -->
+    <!-- APP PRINCIPAL -->
     <div id="appScreen" class="min-h-screen" style="display: none;">
-        <!-- Header Superior -->
+        <!-- HEADER -->
         <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-900 dark:to-slate-950 border-b border-slate-700/50 sticky top-0 z-40">
-            <div class="max-w-6xl mx-auto px-4 py-2.5 flex justify-between items-center">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div>
                     <h1 class="font-black text-lg tracking-tight">
                         <span class="text-emerald-400">☁️ CLOUD FINANCE</span>
@@ -86,7 +73,7 @@
                     </h1>
                     <p id="userDisplay" class="text-[9px] text-slate-400 mt-0.5"></p>
                 </div>
-                <div class="flex gap-1.5">
+                <div class="flex gap-2">
                     <button onclick="toggleDarkMode()" class="bg-slate-700/50 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs transition">🌓</button>
                     <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition">📄 PDF</button>
                     <button onclick="handleLogout()" class="bg-rose-600/80 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition">🚪 SAIR</button>
@@ -95,26 +82,17 @@
         </div>
 
         <div class="max-w-6xl mx-auto px-4 py-5">
-            <!-- Abas de navegação -->
-            <div class="flex gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl mb-5 w-fit">
-                <button id="tabTransacoes" onclick="mudarAba('transacoes')" 
-                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all bg-emerald-600 text-white shadow-md">
-                    💰 TRANSAÇÕES
-                </button>
-                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" 
-                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">
-                    📈 INVESTIMENTOS
-                </button>
-                <button id="tabMetas" onclick="mudarAba('metas')" 
-                    class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">
-                    🎯 METAS
-                </button>
+            <!-- ABAS -->
+            <div class="flex gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl mb-6 w-fit">
+                <button id="tabTransacoes" onclick="mudarAba('transacoes')" class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all bg-emerald-600 text-white shadow-md">💰 TRANSAÇÕES</button>
+                <button id="tabInvestimentos" onclick="mudarAba('investimentos')" class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">📈 INVESTIMENTOS</button>
+                <button id="tabMetas" onclick="mudarAba('metas')" class="px-5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wide transition-all text-slate-600 dark:text-slate-300">🎯 METAS</button>
             </div>
 
-            <!-- Área de Transações -->
+            <!-- ==================== ÁREA TRANSAÇÕES ==================== -->
             <div id="areaTransacoes">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    <!-- Coluna Esquerda - Formulário -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- COLUDA ESQUERDA - FORMULÁRIO -->
                     <div class="lg:col-span-5 space-y-5">
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5">
@@ -123,16 +101,10 @@
                             <div class="p-4 space-y-3">
                                 <input type="hidden" id="editId">
                                 
-                                <!-- Botões Receita/Despesa - DESPESA marcado por padrão -->
+                                <!-- Botões Receita/Despesa -->
                                 <div class="flex gap-2">
-                                    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" 
-                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                        💰 RECEITA
-                                    </button>
-                                    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" 
-                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">
-                                        📉 DESPESA
-                                    </button>
+                                    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">💰 RECEITA</button>
+                                    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">📉 DESPESA</button>
                                 </div>
                                 <select id="inType" class="hidden">
                                     <option value="income">💰 Receita (+)</option>
@@ -156,15 +128,12 @@
                                     <input id="inYear" type="number" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 </div>
                                 
-                                <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider hover:bg-black dark:hover:bg-emerald-500 transition">
-                                    💾 SALVAR NA NUVEM
-                                </button>
-                                <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-1.5 rounded-lg text-[10px] transition">
-                                    ← CANCELAR EDIÇÃO
-                                </button>
+                                <button onclick="adicionar()" id="btnSave" class="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider hover:bg-black dark:hover:bg-emerald-500 transition">💾 SALVAR NA NUVEM</button>
+                                <button id="btnCancelEdit" onclick="resetForm()" class="hidden w-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white font-bold py-1.5 rounded-lg text-[10px] transition">← CANCELAR EDIÇÃO</button>
                             </div>
                         </div>
                         
+                        <!-- GERENCIAR CATEGORIAS/MÉTODOS -->
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
                             <h4 class="font-bold text-[10px] uppercase tracking-wider text-slate-400 mb-2">📋 GERENCIAR</h4>
                             <div class="space-y-2">
@@ -180,33 +149,36 @@
                         </div>
                     </div>
                     
+                    <!-- COLUNA DIREITA - RESUMO E TABELA -->
                     <div class="lg:col-span-7 space-y-5">
+                        <!-- CARDS SALDO -->
                         <div class="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950 rounded-xl p-5 text-white shadow-md">
                             <p class="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">SALDO DO MÊS</p>
                             <h2 id="totalBalance" class="text-4xl font-black mb-3">R$ 0,00</h2>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="bg-emerald-500/20 rounded-lg p-2.5">
-                                    <p class="text-[9px] uppercase text-emerald-300">Receitas</p>
+                                    <p class="text-[9px] uppercase text-emerald-300">RECEITAS</p>
                                     <p id="totalReceitas" class="text-base font-bold text-emerald-400">R$ 0,00</p>
                                 </div>
                                 <div class="bg-rose-500/20 rounded-lg p-2.5">
-                                    <p class="text-[9px] uppercase text-rose-300">Despesas</p>
+                                    <p class="text-[9px] uppercase text-rose-300">DESPESAS</p>
                                     <p id="totalDespesas" class="text-base font-bold text-rose-400">R$ 0,00</p>
                                 </div>
                             </div>
                         </div>
                         
+                        <!-- FILTROS E TABELA -->
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-2">
                                 <h3 class="font-bold text-slate-700 dark:text-slate-300 text-xs">📋 HISTÓRICO <span id="contadorRegistros" class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full ml-1">0</span></h3>
-                                <div class="flex gap-1.5">
+                                <div class="flex gap-2">
                                     <input type="text" placeholder="🔍 Buscar..." onkeyup="filtrarTabela(this.value)" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 w-28">
                                     <select id="fMonth" onchange="render()" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"></select>
                                     <input id="fYear" type="number" onchange="render()" class="p-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 w-16">
                                 </div>
                             </div>
-                            <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-                                <table class="w-full text-left transaction-table text-sm">
+                            <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
+                                <table class="w-full text-left">
                                     <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                                 </table>
                             </div>
@@ -215,48 +187,32 @@
                 </div>
             </div>
 
-            <!-- Área de Investimentos -->
+            <!-- ==================== ÁREA INVESTIMENTOS ==================== -->
             <div id="areaInvestimentos" style="display: none;">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-5 space-y-5">
                         <div class="bg-gradient-to-br from-emerald-800 to-emerald-900 rounded-xl p-5 text-white shadow-md">
                             <p class="text-[10px] uppercase tracking-wider text-emerald-300 mb-0.5">💰 TOTAL INVESTIDO</p>
                             <h2 id="totalInvestidoMP" class="text-2xl font-black mb-2">R$ 0,00</h2>
                             <div class="grid grid-cols-2 gap-3 mt-3 pt-2 border-t border-emerald-700/50">
-                                <div>
-                                    <p class="text-[9px] text-emerald-300">VALOR ATUAL</p>
-                                    <p id="totalAtualMP" class="text-base font-bold">R$ 0,00</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-[9px] text-emerald-300">RENDIMENTO</p>
-                                    <p id="totalRendimentoMP" class="text-base font-bold">R$ 0,00</p>
-                                </div>
+                                <div><p class="text-[9px] text-emerald-300">VALOR ATUAL</p><p id="totalAtualMP" class="text-base font-bold">R$ 0,00</p></div>
+                                <div class="text-right"><p class="text-[9px] text-emerald-300">RENDIMENTO</p><p id="totalRendimentoMP" class="text-base font-bold">R$ 0,00</p></div>
                             </div>
-                            <div class="mt-2 pt-1">
-                                <p class="text-[9px] text-emerald-300">RENTABILIDADE TOTAL</p>
-                                <p id="rentabilidadeTotalMP" class="text-lg font-bold">0,00%</p>
-                            </div>
+                            <div class="mt-2 pt-1"><p class="text-[9px] text-emerald-300">RENTABILIDADE TOTAL</p><p id="rentabilidadeTotalMP" class="text-lg font-bold">0,00%</p></div>
                         </div>
-                        
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="abrirModalInvestimento()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-xs uppercase transition flex items-center justify-center gap-1">
-                                ➕ INVESTIR
-                            </button>
-                            <button onclick="atualizarRendimentosDiarios()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-2 rounded-lg font-bold text-xs uppercase hover:bg-slate-300 transition flex items-center justify-center gap-1">
-                                🔄 ATUALIZAR
-                            </button>
+                            <button onclick="abrirModalInvestimento()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-xs uppercase transition flex items-center justify-center gap-1">➕ INVESTIR</button>
+                            <button onclick="atualizarRendimentosDiarios()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-2 rounded-lg font-bold text-xs uppercase hover:bg-slate-300 transition flex items-center justify-center gap-1">🔄 ATUALIZAR</button>
                         </div>
-                        
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
                             <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-1.5">📈 Como funciona?</p>
                             <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">Rendimentos calculados com CDI (13,15% a.a.). Atualização automática a cada 6 horas.</p>
                         </div>
                     </div>
-                    
                     <div class="lg:col-span-7">
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                <h3 class="font-bold text-slate-700 dark:text-slate-300 text-xs">📈 INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full ml-1">0</span></h3>
+                                <h3 class="font-bold text-slate-700 dark:text-slate-300 text-xs">📈 SEUS INVESTIMENTOS <span id="contadorInvestimentosMP" class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full ml-1">0</span></h3>
                                 <button onclick="abrirModalInvestimento()" class="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">+ NOVO</button>
                             </div>
                             <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
@@ -278,9 +234,9 @@
                 </div>
             </div>
 
-            <!-- Área de Metas -->
+            <!-- ==================== ÁREA METAS ==================== -->
             <div id="areaMetas" style="display: none;">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-5">
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-2.5">
@@ -291,11 +247,8 @@
                                 <textarea id="metaDescricao" rows="2" placeholder="Descrição (opcional)" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm resize-none"></textarea>
                                 <input type="number" id="metaValorAlvo" placeholder="Valor alvo" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 <select id="metaCategoria" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
-                                    <option value="VIAGEM">✈️ VIAGEM</option>
-                                    <option value="CARRO">🚗 CARRO</option>
-                                    <option value="CASA">🏠 CASA</option>
-                                    <option value="EDUCACAO">📚 EDUCAÇÃO</option>
-                                    <option value="INVESTIMENTO">💰 INVESTIMENTO</option>
+                                    <option value="VIAGEM">✈️ VIAGEM</option><option value="CARRO">🚗 CARRO</option><option value="CASA">🏠 CASA</option>
+                                    <option value="EDUCACAO">📚 EDUCAÇÃO</option><option value="INVESTIMENTO">💰 INVESTIMENTO</option><option value="OUTROS">🎯 OUTROS</option>
                                 </select>
                                 <input type="date" id="metaDataAlvo" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 <div class="flex gap-2">
@@ -305,34 +258,28 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div class="lg:col-span-7 space-y-5">
                         <div class="bg-gradient-to-br from-violet-800 to-violet-900 rounded-xl p-5 text-white shadow-md">
                             <p class="text-[10px] uppercase tracking-wider text-violet-300 mb-0.5">🎯 TOTAL POUPADO</p>
                             <h2 id="totalPoupadoMetas" class="text-3xl font-black mb-2">R$ 0,00</h2>
                             <div class="mt-2">
-                                <div class="flex justify-between text-[9px] mb-0.5">
-                                    <span>PROGRESSO GERAL</span>
-                                    <span id="progressoGeralMetas">0%</span>
-                                </div>
-                                <div class="h-1.5 bg-violet-700/50 rounded-full overflow-hidden">
-                                    <div id="barraProgressoGeral" class="h-full bg-violet-400 rounded-full transition-all" style="width: 0%"></div>
-                                </div>
+                                <div class="flex justify-between text-[9px] mb-0.5"><span>PROGRESSO GERAL</span><span id="progressoGeralMetas">0%</span></div>
+                                <div class="h-1.5 bg-violet-700/50 rounded-full overflow-hidden"><div id="barraProgressoGeral" class="h-full bg-violet-400 rounded-full transition-all" style="width: 0%"></div></div>
                             </div>
                         </div>
-                        
                         <div id="listaMetas" class="space-y-2 max-h-[400px] overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
+        <!-- FOOTER -->
         <div class="border-t border-slate-200 dark:border-slate-800 mt-6 py-3 text-center">
             <p class="text-[9px] text-slate-400">Cloud Finance Pro v2.0 - Dados sincronizados com Firebase</p>
         </div>
     </div>
 
-    <!-- Modal Investimento -->
+    <!-- MODAL INVESTIMENTO -->
     <div id="modalInvestimento" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) fecharModalInvestimento()">
         <div class="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl">
             <div class="sticky top-0 bg-white dark:bg-slate-900 p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
@@ -343,38 +290,22 @@
                 <input type="hidden" id="editIdInvestMP">
                 <input id="inNomeInvest" type="text" placeholder="Nome do investimento" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="inTipoInvestMP" class="p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
-                        <option value="Renda Fixa">💰 Renda Fixa</option>
-                        <option value="Fundos">📊 Fundos</option>
-                        <option value="Ações">📈 Ações</option>
-                    </select>
+                    <select id="inTipoInvestMP" class="p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800"><option value="Renda Fixa">💰 Renda Fixa</option><option value="Fundos">📊 Fundos</option><option value="Ações">📈 Ações</option></select>
                     <input id="inValorAplicado" type="number" placeholder="Valor aplicado" step="0.01" class="p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[9px] text-slate-500 block mb-0.5">Rendimento (% CDI)</label>
-                        <input id="inRendimentoPercentual" type="number" placeholder="106" step="0.1" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
-                    </div>
-                    <div>
-                        <label class="text-[9px] text-slate-500 block mb-0.5">Resgate</label>
-                        <input id="inResgate" type="text" placeholder="Ex: Em 6 meses" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
-                    </div>
+                    <div><label class="text-[9px] text-slate-500 block mb-0.5">Rendimento (% CDI)</label><input id="inRendimentoPercentual" type="number" placeholder="106" step="0.1" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800"></div>
+                    <div><label class="text-[9px] text-slate-500 block mb-0.5">Resgate</label><input id="inResgate" type="text" placeholder="Ex: Em 6 meses" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[9px] text-slate-500 block mb-0.5">Data aplicação</label>
-                        <input id="inDataAplicacao" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
-                    </div>
-                    <div>
-                        <label class="text-[9px] text-slate-500 block mb-0.5">Data vencimento</label>
-                        <input id="inDataVencimento" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800">
-                    </div>
+                    <div><label class="text-[9px] text-slate-500 block mb-0.5">Data aplicação</label><input id="inDataAplicacao" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800"></div>
+                    <div><label class="text-[9px] text-slate-500 block mb-0.5">Data vencimento</label><input id="inDataVencimento" type="date" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800"></div>
                 </div>
                 <div class="flex gap-3">
                     <label class="flex items-center gap-1.5 text-xs"><input id="inResgateImediato" type="checkbox"> 🔓 Resgate imediato</label>
                     <label class="flex items-center gap-1.5 text-xs"><input id="inGarantiaFGC" type="checkbox" checked> ✓ FGC</label>
                 </div>
-                <button onclick="adicionarInvestimentoMP()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase">💾 SALVAR</button>
+                <button onclick="adicionarInvestimentoMP()" id="btnSaveInvestMP" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-xs uppercase">💾 SALVAR</button>
                 <button id="btnCancelEditInvestMP" onclick="resetFormInvestMP()" class="hidden w-full bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-[10px]">← CANCELAR</button>
             </div>
         </div>
@@ -384,6 +315,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="app.js"></script>
 
+    <!-- FIREBASE INIT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -402,13 +334,13 @@
         window.fb_funcs = { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, doc, setDoc, getDoc };
     </script>
 
+    <!-- FUNÇÕES EXTRAS PARA METAS E SINCRONIA DOS BOTÕES -->
     <script>
-        // Função para sincronizar botões com o select inType
+        // Sincroniza os botões Receita/Despesa
         function setTipoTransacao(tipo) {
             document.getElementById('inType').value = tipo;
             const btnReceita = document.getElementById('btnReceita');
             const btnDespesa = document.getElementById('btnDespesa');
-            
             if (tipo === 'income') {
                 btnReceita.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
                 btnReceita.classList.add('bg-emerald-100', 'dark:bg-emerald-900/30', 'text-emerald-600');
@@ -421,169 +353,54 @@
                 btnReceita.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
             }
         }
-
-        // Sobrescrever resetForm para manter Despesa como padrão
+        // Sobrescreve resetForm para manter Despesa como padrão
         const originalResetForm = window.resetForm;
-        window.resetForm = function() {
-            if (originalResetForm) originalResetForm();
-            setTipoTransacao('expense');
-        };
+        window.resetForm = function() { if(originalResetForm) originalResetForm(); setTipoTransacao('expense'); };
+        document.addEventListener('DOMContentLoaded', () => setTipoTransacao('expense'));
 
-        // Garantir que ao carregar a página, o botão Despesa esteja ativo
-        document.addEventListener('DOMContentLoaded', () => {
-            setTipoTransacao('expense');
-        });
-
-        // Metas
+        // ----- METAS -----
         let metas = [];
-
-        function carregarMetas() {
-            const saved = localStorage.getItem('cloudFinance_metas');
-            if (saved) metas = JSON.parse(saved);
-            renderMetas();
-        }
-
-        function salvarMetas() {
-            localStorage.setItem('cloudFinance_metas', JSON.stringify(metas));
-            renderMetas();
-        }
-
+        function carregarMetas() { const saved = localStorage.getItem('cloudFinance_metas'); if(saved) metas = JSON.parse(saved); renderMetas(); }
+        function salvarMetas() { localStorage.setItem('cloudFinance_metas', JSON.stringify(metas)); renderMetas(); }
         function criarMeta() {
             const nome = document.getElementById('metaNome').value.trim();
             const valorAlvo = parseFloat(document.getElementById('metaValorAlvo').value);
-            
-            if (!nome || nome.length < 3) return showToast('Digite um nome para a meta', 'error');
-            if (isNaN(valorAlvo) || valorAlvo <= 0) return showToast('Valor alvo inválido', 'error');
-            
-            metas.push({
-                id: Date.now().toString(),
-                nome: nome,
-                descricao: document.getElementById('metaDescricao').value,
-                valorAlvo: valorAlvo,
-                valorAtual: 0,
-                categoria: document.getElementById('metaCategoria').value,
-                dataAlvo: document.getElementById('metaDataAlvo').value,
-                cor: document.getElementById('metaCor').value,
-                criadoEm: new Date().toISOString()
-            });
-            
+            if(!nome || nome.length<3) return showToast('Digite um nome para a meta', 'error');
+            if(isNaN(valorAlvo) || valorAlvo<=0) return showToast('Valor alvo inválido', 'error');
+            metas.push({ id: Date.now().toString(), nome, descricao: document.getElementById('metaDescricao').value, valorAlvo, valorAtual:0, categoria: document.getElementById('metaCategoria').value, dataAlvo: document.getElementById('metaDataAlvo').value, cor: document.getElementById('metaCor').value, criadoEm: new Date().toISOString() });
             salvarMetas();
-            document.getElementById('metaNome').value = '';
-            document.getElementById('metaDescricao').value = '';
-            document.getElementById('metaValorAlvo').value = '';
-            document.getElementById('metaDataAlvo').value = '';
+            document.getElementById('metaNome').value = ''; document.getElementById('metaDescricao').value = ''; document.getElementById('metaValorAlvo').value = ''; document.getElementById('metaDataAlvo').value = '';
             showToast('Meta criada!', 'success');
         }
-
         function renderMetas() {
-            const container = document.getElementById('listaMetas');
-            if (!container) return;
-            
-            const totalPoupado = metas.reduce((sum, m) => sum + (m.valorAtual || 0), 0);
-            const totalAlvo = metas.reduce((sum, m) => sum + m.valorAlvo, 0);
-            const progressoGeral = totalAlvo > 0 ? (totalPoupado / totalAlvo) * 100 : 0;
-            
-            document.getElementById('totalPoupadoMetas').innerText = totalPoupado.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            const container = document.getElementById('listaMetas'); if(!container) return;
+            const totalPoupado = metas.reduce((s,m)=>s+(m.valorAtual||0),0);
+            const totalAlvo = metas.reduce((s,m)=>s+m.valorAlvo,0);
+            const progressoGeral = totalAlvo>0 ? (totalPoupado/totalAlvo)*100 : 0;
+            document.getElementById('totalPoupadoMetas').innerText = totalPoupado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('progressoGeralMetas').innerText = `${progressoGeral.toFixed(1)}%`;
-            document.getElementById('barraProgressoGeral').style.width = `${Math.min(progressoGeral, 100)}%`;
-            
-            if (metas.length === 0) {
-                container.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 text-center">
-                    <p class="text-slate-400 text-xs">Nenhuma meta criada</p>
-                    <p class="text-slate-400 text-[10px] mt-1">Use o formulário ao lado para criar sua primeira meta</p>
-                </div>`;
-                return;
-            }
-            
-            container.innerHTML = metas.map(meta => {
-                const progresso = (meta.valorAtual / meta.valorAlvo) * 100;
-                const restante = meta.valorAlvo - meta.valorAtual;
-                return `
-                    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">${meta.nome}</h4>
-                                ${meta.descricao ? `<p class="text-[10px] text-slate-400">${meta.descricao}</p>` : ''}
-                            </div>
-                            <div class="flex gap-1.5">
-                                <button onclick="adicionarParaMeta('${meta.id}')" class="text-emerald-500 text-[10px] font-bold">💰 ADICIONAR</button>
-                                <button onclick="excluirMeta('${meta.id}')" class="text-rose-500 text-[10px]">✕</button>
-                            </div>
-                        </div>
-                        <div class="mb-1.5">
-                            <div class="flex justify-between text-[9px] text-slate-500 mb-0.5">
-                                <span>R$ ${meta.valorAtual.toLocaleString('pt-BR')}</span>
-                                <span>R$ ${meta.valorAlvo.toLocaleString('pt-BR')}</span>
-                            </div>
-                            <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all" style="width: ${Math.min(progresso, 100)}%; background-color: ${meta.cor}"></div>
-                            </div>
-                            <p class="text-[9px] text-right mt-0.5 text-slate-400">${progresso.toFixed(1)}% • Falta R$ ${restante.toLocaleString('pt-BR')}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            document.getElementById('barraProgressoGeral').style.width = `${Math.min(progressoGeral,100)}%`;
+            if(metas.length===0) { container.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 text-center"><p class="text-slate-400 text-xs">Nenhuma meta criada</p><p class="text-slate-400 text-[10px] mt-1">Use o formulário ao lado para criar sua primeira meta</p></div>`; return; }
+            container.innerHTML = metas.map(meta => { const progresso = (meta.valorAtual / meta.valorAlvo)*100; const restante = meta.valorAlvo - meta.valorAtual; return `<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3"><div class="flex justify-between items-start mb-2"><div><h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">${meta.nome}</h4>${meta.descricao?`<p class="text-[10px] text-slate-400">${meta.descricao}</p>`:''}</div><div class="flex gap-1.5"><button onclick="adicionarParaMeta('${meta.id}')" class="text-emerald-500 text-[10px] font-bold">💰 ADICIONAR</button><button onclick="excluirMeta('${meta.id}')" class="text-rose-500 text-[10px]">✕</button></div></div><div class="mb-1.5"><div class="flex justify-between text-[9px] text-slate-500 mb-0.5"><span>R$ ${meta.valorAtual.toLocaleString('pt-BR')}</span><span>R$ ${meta.valorAlvo.toLocaleString('pt-BR')}</span></div><div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all" style="width: ${Math.min(progresso,100)}%; background-color: ${meta.cor}"></div></div><p class="text-[9px] text-right mt-0.5 text-slate-400">${progresso.toFixed(1)}% • Falta R$ ${restante.toLocaleString('pt-BR')}</p></div></div>`; }).join('');
         }
-
-        function adicionarParaMeta(id) {
-            const valor = parseFloat(prompt('Quanto você quer adicionar?', '0'));
-            if (isNaN(valor) || valor <= 0) return;
-            const meta = metas.find(m => m.id === id);
-            if (meta) {
-                meta.valorAtual = (meta.valorAtual || 0) + valor;
-                salvarMetas();
-                showToast(`R$ ${valor.toLocaleString('pt-BR')} adicionado!`, 'success');
-            }
-        }
-
-        function excluirMeta(id) {
-            if (confirm('Excluir esta meta?')) {
-                metas = metas.filter(m => m.id !== id);
-                salvarMetas();
-                showToast('Meta excluída', 'success');
-            }
-        }
-
-        const mudarAbaOriginal = window.mudarAba;
+        function adicionarParaMeta(id) { const valor = parseFloat(prompt('Quanto você quer adicionar?','0')); if(isNaN(valor)||valor<=0) return; const meta = metas.find(m=>m.id===id); if(meta) { meta.valorAtual = (meta.valorAtual||0)+valor; salvarMetas(); showToast(`R$ ${valor.toLocaleString('pt-BR')} adicionado!`, 'success'); } }
+        function excluirMeta(id) { if(confirm('Excluir esta meta?')) { metas = metas.filter(m=>m.id!==id); salvarMetas(); showToast('Meta excluída', 'success'); } }
+        // Sobrescreve mudarAba para incluir Metas
+        const originalMudarAba = window.mudarAba;
         window.mudarAba = function(aba) {
             activeTab = aba;
-            const tabs = ['transacoes', 'investimentos', 'metas'];
-            tabs.forEach(t => {
-                const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
-                if (btn) {
-                    btn.classList.remove('bg-emerald-600', 'text-white');
-                    btn.classList.add('text-slate-600', 'dark:text-slate-300');
-                }
-            });
-            
+            const tabs = ['transacoes','investimentos','metas'];
+            tabs.forEach(t => { const btn = document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`); if(btn) { btn.classList.remove('bg-emerald-600','text-white'); btn.classList.add('text-slate-600','dark:text-slate-300'); } });
             document.getElementById('areaTransacoes').style.display = 'none';
             document.getElementById('areaInvestimentos').style.display = 'none';
             document.getElementById('areaMetas').style.display = 'none';
-            
-            if (aba === 'transacoes') {
-                document.getElementById('tabTransacoes').classList.add('bg-emerald-600', 'text-white');
-                document.getElementById('areaTransacoes').style.display = 'block';
-                resetForm();
-                render();
-            } else if (aba === 'investimentos') {
-                document.getElementById('tabInvestimentos').classList.add('bg-emerald-600', 'text-white');
-                document.getElementById('areaInvestimentos').style.display = 'block';
-                resetFormInvestMP();
-                render();
-                setTimeout(() => renderInvestimentosMP(), 100);
-            } else if (aba === 'metas') {
-                document.getElementById('tabMetas').classList.add('bg-emerald-600', 'text-white');
-                document.getElementById('areaMetas').style.display = 'block';
-                carregarMetas();
-            }
+            if(aba === 'transacoes') { document.getElementById('tabTransacoes').classList.add('bg-emerald-600','text-white'); document.getElementById('areaTransacoes').style.display = 'block'; resetForm(); render(); }
+            else if(aba === 'investimentos') { document.getElementById('tabInvestimentos').classList.add('bg-emerald-600','text-white'); document.getElementById('areaInvestimentos').style.display = 'block'; resetFormInvestMP(); render(); setTimeout(()=>renderInvestimentosMP(),100); }
+            else if(aba === 'metas') { document.getElementById('tabMetas').classList.add('bg-emerald-600','text-white'); document.getElementById('areaMetas').style.display = 'block'; carregarMetas(); }
         };
-        
-        setTimeout(() => carregarMetas(), 500);
-        
+        setTimeout(()=>carregarMetas(),500);
+        window.criarMeta = criarMeta; window.adicionarParaMeta = adicionarParaMeta; window.excluirMeta = excluirMeta;
         window.setTipoTransacao = setTipoTransacao;
-        window.criarMeta = criarMeta;
-        window.adicionarParaMeta = adicionarParaMeta;
-        window.excluirMeta = excluirMeta;
     </script>
 </body>
 </html>
