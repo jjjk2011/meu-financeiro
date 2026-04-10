@@ -15,32 +15,25 @@
     </script>
     <style>
         * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        
         .fade-enter { opacity: 0; transform: translateY(10px); }
         .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
-        
         .card-hover { transition: all 0.2s ease; }
         .card-hover:hover { transform: translateY(-1px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
-        
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark ::-webkit-scrollbar-track { background: #1e293b; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        
         input, select, textarea { transition: all 0.2s ease; }
         input:focus, select:focus, textarea:focus { outline: none; ring: 2px solid #10b981; }
-        
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-slide-in { animation: slideIn 0.3s ease forwards; }
-        
         .transaction-table tr { transition: all 0.15s ease; }
         .transaction-table tr:hover { background-color: #f8fafc; }
         .dark .transaction-table tr:hover { background-color: #1e293b; }
-        
         .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 9px; font-weight: 600; }
     </style>
 </head>
@@ -130,21 +123,21 @@
                             <div class="p-4 space-y-3">
                                 <input type="hidden" id="editId">
                                 
-                              <!-- Substitua os botões de RECEITA/DESPESA por este bloco -->
-<div class="flex gap-2">
-    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" 
-        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
-        💰 RECEITA
-    </button>
-    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" 
-        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">
-        📉 DESPESA
-    </button>
-</div>
-<select id="inType" class="hidden">
-    <option value="income">💰 Receita (+)</option>
-    <option value="expense" selected>📉 Despesa (-)</option>
-</select>
+                                <!-- Botões Receita/Despesa - DESPESA marcado por padrão -->
+                                <div class="flex gap-2">
+                                    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" 
+                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                        💰 RECEITA
+                                    </button>
+                                    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" 
+                                        class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">
+                                        📉 DESPESA
+                                    </button>
+                                </div>
+                                <select id="inType" class="hidden">
+                                    <option value="income">💰 Receita (+)</option>
+                                    <option value="expense" selected>📉 Despesa (-)</option>
+                                </select>
                                 
                                 <input id="inDesc" type="text" placeholder="Descrição" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
                                 
@@ -275,7 +268,7 @@
                                             <th class="py-2.5 text-right font-medium">RENDIMENTO</th>
                                             <th class="py-2.5 text-right font-medium">DATAS</th>
                                             <th class="py-2.5 w-6"></th>
-                                         </tr>
+                                        </tr>
                                     </thead>
                                     <tbody id="investTableBodyMP" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs"></tbody>
                                 </table>
@@ -410,6 +403,38 @@
     </script>
 
     <script>
+        // Função para sincronizar botões com o select inType
+        function setTipoTransacao(tipo) {
+            document.getElementById('inType').value = tipo;
+            const btnReceita = document.getElementById('btnReceita');
+            const btnDespesa = document.getElementById('btnDespesa');
+            
+            if (tipo === 'income') {
+                btnReceita.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
+                btnReceita.classList.add('bg-emerald-100', 'dark:bg-emerald-900/30', 'text-emerald-600');
+                btnDespesa.classList.remove('bg-rose-100', 'dark:bg-rose-900/30', 'text-rose-600');
+                btnDespesa.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
+            } else {
+                btnDespesa.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
+                btnDespesa.classList.add('bg-rose-100', 'dark:bg-rose-900/30', 'text-rose-600');
+                btnReceita.classList.remove('bg-emerald-100', 'dark:bg-emerald-900/30', 'text-emerald-600');
+                btnReceita.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500');
+            }
+        }
+
+        // Sobrescrever resetForm para manter Despesa como padrão
+        const originalResetForm = window.resetForm;
+        window.resetForm = function() {
+            if (originalResetForm) originalResetForm();
+            setTipoTransacao('expense');
+        };
+
+        // Garantir que ao carregar a página, o botão Despesa esteja ativo
+        document.addEventListener('DOMContentLoaded', () => {
+            setTipoTransacao('expense');
+        });
+
+        // Metas
         let metas = [];
 
         function carregarMetas() {
@@ -555,6 +580,7 @@
         
         setTimeout(() => carregarMetas(), 500);
         
+        window.setTipoTransacao = setTipoTransacao;
         window.criarMeta = criarMeta;
         window.adicionarParaMeta = adicionarParaMeta;
         window.excluirMeta = excluirMeta;
