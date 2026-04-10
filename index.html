@@ -26,7 +26,6 @@
         input:focus, select:focus, textarea:focus { outline: none; ring: 2px solid #10b981; }
         .transaction-row:hover { background-color: #f8fafc; }
         .dark .transaction-row:hover { background-color: #1e293b; }
-        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 9px; font-weight: 600; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -92,7 +91,7 @@
             <!-- ==================== ÁREA TRANSAÇÕES ==================== -->
             <div id="areaTransacoes">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- COLUDA ESQUERDA - FORMULÁRIO -->
+                    <!-- COLUNA ESQUERDA - FORMULÁRIO -->
                     <div class="lg:col-span-5 space-y-5">
                         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5">
@@ -103,8 +102,8 @@
                                 
                                 <!-- Botões Receita/Despesa -->
                                 <div class="flex gap-2">
-                                    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">💰 RECEITA</button>
-                                    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">📉 DESPESA</button>
+                                    <button type="button" id="btnReceita" onclick="setTipoTransacao('income')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-slate-100 dark:bg-slate-800 text-slate-500">💰 RECEITA (+)</button>
+                                    <button type="button" id="btnDespesa" onclick="setTipoTransacao('expense')" class="flex-1 py-1.5 rounded-lg font-bold text-xs transition-all bg-rose-100 dark:bg-rose-900/30 text-rose-600">📉 DESPESA (-)</button>
                                 </div>
                                 <select id="inType" class="hidden">
                                     <option value="income">💰 Receita (+)</option>
@@ -153,15 +152,17 @@
                     <div class="lg:col-span-7 space-y-5">
                         <!-- CARDS SALDO -->
                         <div class="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950 rounded-xl p-5 text-white shadow-md">
-                            <p class="text-[10px] uppercase tracking-wider text-slate-400 mb-0.5">SALDO DO MÊS</p>
-                            <h2 id="totalBalance" class="text-4xl font-black mb-3">R$ 0,00</h2>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="bg-emerald-500/20 rounded-lg p-2.5">
-                                    <p class="text-[9px] uppercase text-emerald-300">RECEITAS</p>
+                            <div class="grid grid-cols-3 gap-3 text-center">
+                                <div>
+                                    <p class="text-[9px] uppercase tracking-wider text-slate-400 mb-1">SALDO</p>
+                                    <h2 id="totalBalance" class="text-xl font-black">R$ 0,00</h2>
+                                </div>
+                                <div class="border-x border-slate-700/50">
+                                    <p class="text-[9px] uppercase tracking-wider text-slate-400 mb-1">RECEITAS</p>
                                     <p id="totalReceitas" class="text-base font-bold text-emerald-400">R$ 0,00</p>
                                 </div>
-                                <div class="bg-rose-500/20 rounded-lg p-2.5">
-                                    <p class="text-[9px] uppercase text-rose-300">DESPESAS</p>
+                                <div>
+                                    <p class="text-[9px] uppercase tracking-wider text-slate-400 mb-1">DESPESAS</p>
                                     <p id="totalDespesas" class="text-base font-bold text-rose-400">R$ 0,00</p>
                                 </div>
                             </div>
